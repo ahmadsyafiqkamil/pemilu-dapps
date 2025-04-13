@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-# from app.routes import note_routes
+from app.routes import pemilu_routes
 
 app = FastAPI()
 
@@ -12,4 +12,4 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# app.include_router(note_routes.router)
+app.include_router(pemilu_routes.router)
