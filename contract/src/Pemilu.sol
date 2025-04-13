@@ -1,108 +1,107 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.29;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Pemilu is AccessControl {
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    
+contract Pemilu is Ownable {
+    uint public startTime;
+    uint public endTime;
+
+    // Struktur kandidat
     struct Candidate {
+        uint id;
         string name;
         uint voteCount;
     }
 
+    // Struktur pemilih
     struct Voter {
-        bool isVoted;   
-        string name;
+        bool isRegistered;
+        bool hasVoted;
+        uint voteCandidateId;
     }
 
-    Candidate[] private candidates;
-    mapping(address => Voter) private voters;
-    uint private totalVoters;
-    bool private votingOpen;
+    // Jumlah kandidat
+    uint public candidateCount;
 
-    event CandidateAdded(string indexed name, uint indexed candidateId);
-    event VoterRegistered(address indexed voter, string name);
-    event VoteCasted(address indexed voter, uint indexed candidateId, uint timestamp);
-    event VotingStatusChanged(bool indexed isOpen);
-    event ContractDeployed(address indexed admin, uint timestamp);
+    // Data kandidat dan pemilih
+    mapping(uint => Candidate) public candidates;
+    mapping(address => Voter) public voters;
 
-    constructor() payable {
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(ADMIN_ROLE, msg.sender);
-        votingOpen = false;
+    event CandidateAdded(uint id, string name);
+    event VoterRegistered(address indexed voter);
+    event Voted(address indexed voter, uint candidateId);
+    event WinnerDeclared(uint id, string name, uint voteCount);
+
+
+    // Constructor menggunakan Ownable (owner = deployer)
+    constructor() Ownable(msg.sender) {}
+
+    // Fungsi hanya untuk admin (owner) menambahkan kandidat
+    function addCandidate(string memory _name) public onlyOwner {
+        candidateCount++;
+        candidates[candidateCount] = Candidate(candidateCount, _name, 0);
+        emit CandidateAdded(candidateCount, _name);
+    }
+
+    // Fungsi voter untuk mendaftar ke sistem
+    function registerAsVoter() public {
+        require(!voters[msg.sender].isRegistered, "Sudah terdaftar");
+        voters[msg.sender].isRegistered = true;
+        emit VoterRegistered(msg.sender);
+    }
+
+    function vote(uint _candidateId) public onlyDuringVoting {
+        // require(block.timestamp >= startTime && block.timestamp <= endTime, "Pemilihan tidak aktif");
+
+        Voter storage sender = voters[msg.sender];
+
+        require(sender.isRegistered, "Anda tidak terdaftar sebagai pemilih");
+        require(!sender.hasVoted, "Sudah memilih");
+        require(_candidateId > 0 && _candidateId <= candidateCount, "Kandidat tidak valid");
+
+        sender.hasVoted = true;
+        sender.voteCandidateId = _candidateId;
+        candidates[_candidateId].voteCount++;
+
+        emit Voted(msg.sender, _candidateId);
+    }
+
+    function getVoteCount(uint _candidateId) public view onlyOwner returns (uint) {
+    require(_candidateId > 0 && _candidateId <= candidateCount, "Kandidat tidak valid");
+    return candidates[_candidateId].voteCount;
+}
+    function setVotingPeriod(uint _startTime, uint _endTime) public onlyOwner {
+        require(_startTime < _endTime, "Waktu mulai harus lebih awal dari waktu berakhir");
+        require(block.timestamp < _startTime, "Waktu mulai tidak boleh sudah berlalu");
+        startTime = _startTime;
+        endTime = _endTime;
+    }
+
+    function getWinner() public onlyAfterVoting returns (uint id, string memory name, uint voteCount) {
+        // require(block.timestamp > endTime, "Pemilihan belum berakhir");
+
+        uint maxVotes = 0;
+        uint winnerId = 0;
+
+        for (uint i = 1; i <= candidateCount; i++) {
+            if (candidates[i].voteCount > maxVotes) {
+                maxVotes = candidates[i].voteCount;
+                winnerId = i;
+            }
+        }
         
-        emit ContractDeployed(msg.sender, block.timestamp);
+        Candidate memory winner = candidates[winnerId];
+        emit WinnerDeclared(winner.id, winner.name, winner.voteCount);
+        return (winnerId, winner.name, winner.voteCount);
     }
 
-    function addCandidate(string memory _name) external onlyRole(ADMIN_ROLE) {
-        uint candidateId = candidates.length;
-        Candidate storage newCandidate = candidates.push();
-        newCandidate.name = _name;
-        
-        emit CandidateAdded(_name, candidateId);
+    modifier onlyDuringVoting() {
+        require(block.timestamp >= startTime && block.timestamp <= endTime, "Pemilihan tidak aktif");
+        _;
     }
-
-    function startVoting() external onlyRole(ADMIN_ROLE) {
-        votingOpen = true;
-        emit VotingStatusChanged(true);
-    }
-
-    function stopVoting() external onlyRole(ADMIN_ROLE) {
-        votingOpen = false;
-        emit VotingStatusChanged(false);
-    }
-
-    function getCandidateCount() external view returns (uint) {
-        return candidates.length;
-    }
-
-    function getVotingResults() external view returns (Candidate[] memory) {
-        return candidates;
-    }
-
-    function registerVoter(string memory _name) external {
-        require(!voters[msg.sender].isVoted, "Already registered");
-        
-        Voter storage newVoter = voters[msg.sender];
-        newVoter.name = _name;
-        
-        totalVoters++;
-        emit VoterRegistered(msg.sender, _name);
-    }
-
-    function vote(uint _candidateId) external {
-        Voter storage voter = voters[msg.sender];
-        require(!voter.isVoted, "Already voted");
-        require(votingOpen, "Voting is not open");
-        require(_candidateId < candidates.length, "Invalid candidate ID");
-        
-        voter.isVoted = true;
-        
-        Candidate storage candidate = candidates[_candidateId];
-        candidate.voteCount++;
-        
-        emit VoteCasted(msg.sender, _candidateId, block.timestamp);
-    }
-
-    function getCandidate(uint _candidateId) external view returns (string memory name, uint voteCount) {
-        require(_candidateId < candidates.length, "Invalid candidate ID");
-        Candidate storage candidate = candidates[_candidateId];
-        return (candidate.name, candidate.voteCount);
-    }
-
-    function getVoterInfo(address _voter) external view returns (bool isVoted, string memory name) {
-        Voter storage voter = voters[_voter];
-        return (voter.isVoted, voter.name);
+    modifier onlyAfterVoting() {
+        require(block.timestamp > endTime, "Pemilihan belum berakhir");
+        _;
     }
 }
-
-// alur pemilu
-// 1. admin membuat kandidat
-// 2. voter mendaftarkan diri 
-// 3. admin menerima pendaftaran voter
-// 4. voter memilih kandidat
-// 5. admin menghitung voting
-// 6. admin membuat pemenang
-// 7. admin menyimpan pemenang ke dalam blockchain
-// 8. pemenang dinyatakan pemenang
