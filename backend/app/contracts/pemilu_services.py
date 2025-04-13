@@ -17,6 +17,11 @@ if not w3.is_connected():
 contract_address = os.getenv("CONTRACT_ADDRESS")
 contract = w3.eth.contract(address=contract_address, abi=abi)
 
+def is_contract_owner(address: str) -> bool:
+    """Check if the given address is the contract owner"""
+    owner = contract.functions.owner().call()
+    return Web3.to_checksum_address(address) == Web3.to_checksum_address(owner)
+
 def get_all_candidates():
     candidate_count = contract.functions.candidateCount().call()
     candidates = []
