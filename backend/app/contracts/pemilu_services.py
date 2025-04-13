@@ -22,6 +22,26 @@ def is_contract_owner(address: str) -> bool:
     owner = contract.functions.owner().call()
     return Web3.to_checksum_address(address) == Web3.to_checksum_address(owner)
 
+def is_admin(address: str) -> bool:
+    """Check if the given address is an admin"""
+    return contract.functions.isAdmin(Web3.to_checksum_address(address)).call()
+
+def add_admin(owner_address: str, new_admin_address: str):
+    """Add a new admin to the contract"""
+    if not is_contract_owner(owner_address):
+        raise Exception("Only contract owner can add new admins")
+    
+    tx_function = contract.functions.addAdmin(Web3.to_checksum_address(new_admin_address))
+    return build_transact(tx_function, owner_address)
+
+def remove_admin(owner_address: str, admin_address: str):
+    """Remove an admin from the contract"""
+    if not is_contract_owner(owner_address):
+        raise Exception("Only contract owner can remove admins")
+    
+    tx_function = contract.functions.removeAdmin(Web3.to_checksum_address(admin_address))
+    return build_transact(tx_function, owner_address)
+
 def get_all_candidates():
     candidate_count = contract.functions.candidateCount().call()
     candidates = []
@@ -35,13 +55,11 @@ def get_all_candidates():
     return candidates
 
 def add_candidate(user_address: str, name: str):
+    if not is_admin(user_address):
+        raise Exception("Only admins can add candidates")
+        
     tx_function = contract.functions.addCandidate(name)
     return build_transact(tx_function, user_address)
-
-
-
-
-
 
 def build_transact(tx_function, user_address):
     gas_limit, gas_params = utils.get_gas_parameters(tx_function, user_address)

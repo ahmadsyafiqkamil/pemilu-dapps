@@ -18,11 +18,46 @@ def add_candidate(data: models.Candidate):
         raise HTTPException(status_code=400, detail="Invalid Ethereum address")
     
     try:
-        # Verify if the address is the contract owner
-        if not pemilu_services.is_contract_owner(data.address):
-            raise HTTPException(status_code=403, detail="Only contract owner can add candidates")
+        # Verify if the address is an admin
+        if not pemilu_services.is_admin(data.address):
+            raise HTTPException(status_code=403, detail="Only admins can add candidates")
             
         tx = pemilu_services.add_candidate(user_address=data.address, name=data.name)
         return {"message": "Candidate added successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/admins")
+def add_admin(owner_address: str = Query(..., description="Contract owner address"), 
+              new_admin_address: str = Query(..., description="New admin address")):
+    if not Web3.is_address(owner_address) or not Web3.is_address(new_admin_address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        tx = pemilu_services.add_admin(owner_address=owner_address, new_admin_address=new_admin_address)
+        return {"message": "Admin added successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/admins/{admin_address}")
+def remove_admin(admin_address: str, 
+                owner_address: str = Query(..., description="Contract owner address")):
+    if not Web3.is_address(owner_address) or not Web3.is_address(admin_address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        tx = pemilu_services.remove_admin(owner_address=owner_address, admin_address=admin_address)
+        return {"message": "Admin removed successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/admins/check/{address}")
+def check_admin(address: str):
+    if not Web3.is_address(address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        is_admin = pemilu_services.is_admin(address)
+        return {"is_admin": is_admin}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

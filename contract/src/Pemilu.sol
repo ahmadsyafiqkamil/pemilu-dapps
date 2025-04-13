@@ -7,6 +7,13 @@ contract Pemilu is Ownable {
     uint public startTime;
     uint public endTime;
 
+    // Mapping untuk menyimpan daftar admin
+    mapping(address => bool) public admins;
+
+    // Event untuk admin management
+    event AdminAdded(address indexed admin);
+    event AdminRemoved(address indexed admin);
+
     // Struktur kandidat
     struct Candidate {
         uint id;
@@ -33,12 +40,42 @@ contract Pemilu is Ownable {
     event Voted(address indexed voter, uint candidateId);
     event WinnerDeclared(uint id, string name, uint voteCount);
 
+    // Modifier untuk mengecek apakah address adalah admin
+    modifier onlyAdmin() {
+        require(admins[msg.sender] || owner() == msg.sender, "Not an admin");
+        _;
+    }
 
     // Constructor menggunakan Ownable (owner = deployer)
-    constructor() Ownable(msg.sender) {}
+    constructor() Ownable(msg.sender) {
+        // Set deployer sebagai admin pertama
+        admins[msg.sender] = true;
+        emit AdminAdded(msg.sender);
+    }
 
-    // Fungsi hanya untuk admin (owner) menambahkan kandidat
-    function addCandidate(string memory _name) public onlyOwner {
+    // Fungsi untuk menambah admin (hanya owner yang bisa)
+    function addAdmin(address _newAdmin) public onlyOwner {
+        require(_newAdmin != address(0), "Invalid address");
+        require(!admins[_newAdmin], "Already an admin");
+        admins[_newAdmin] = true;
+        emit AdminAdded(_newAdmin);
+    }
+
+    // Fungsi untuk menghapus admin (hanya owner yang bisa)
+    function removeAdmin(address _admin) public onlyOwner {
+        require(_admin != owner(), "Cannot remove owner from admin");
+        require(admins[_admin], "Not an admin");
+        admins[_admin] = false;
+        emit AdminRemoved(_admin);
+    }
+
+    // Fungsi untuk mengecek apakah address adalah admin
+    function isAdmin(address _address) public view returns (bool) {
+        return admins[_address] || owner() == _address;
+    }
+
+    // Fungsi hanya untuk admin menambahkan kandidat
+    function addCandidate(string memory _name) public onlyAdmin {
         candidateCount++;
         candidates[candidateCount] = Candidate(candidateCount, _name, 0);
         emit CandidateAdded(candidateCount, _name);
