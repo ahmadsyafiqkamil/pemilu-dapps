@@ -4,7 +4,7 @@ import { useAccount } from 'wagmi'
 import ConnectWalletNotice from '@/components/ui/ConnectWalletNotice'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { api } from '@/lib/api'
+import { api } from '@/libs/api'
 
 export default function Home() {
   const { isConnected, address } = useAccount()

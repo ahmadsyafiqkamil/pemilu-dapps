@@ -7,7 +7,7 @@ import {
   useChainModal,
 } from '@rainbow-me/rainbowkit'
 import { useAccount, useDisconnect } from 'wagmi'
-import { emojiAvatarForAddress } from '@/lib/emojiAvatarForAddress'
+import { emojiAvatarForAddress } from '@/libs/emojiAvatarForAddress'
 import { useRouter } from 'next/navigation'
 
 export const ConnectButton = () => {
