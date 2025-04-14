@@ -7,13 +7,6 @@ contract Pemilu is Ownable {
     uint public startTime;
     uint public endTime;
 
-    // Mapping untuk menyimpan daftar admin
-    mapping(address => bool) public admins;
-
-    // Event untuk admin management
-    event AdminAdded(address indexed admin);
-    event AdminRemoved(address indexed admin);
-
     // Struktur kandidat
     struct Candidate {
         uint id;
@@ -34,11 +27,16 @@ contract Pemilu is Ownable {
     // Data kandidat dan pemilih
     mapping(uint => Candidate) public candidates;
     mapping(address => Voter) public voters;
+    // Mapping untuk menyimpan daftar admin
+    mapping(address => bool) public admins;
 
     event CandidateAdded(uint id, string name);
     event VoterRegistered(address indexed voter);
     event Voted(address indexed voter, uint candidateId);
     event WinnerDeclared(uint id, string name, uint voteCount);
+    // Event untuk admin management
+    event AdminAdded(address indexed admin);
+    event AdminRemoved(address indexed admin);
 
     // Modifier untuk mengecek apakah address adalah admin
     modifier onlyAdmin() {
