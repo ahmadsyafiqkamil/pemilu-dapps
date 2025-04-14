@@ -4,9 +4,15 @@ import { Inter } from 'next/font/google'
 import { Toaster } from '@/components/ui/sonner'
 import { headers } from 'next/headers'
 import Providers from './provider'
-import { ConnectButton } from '@/components/ui/connectButton'
+import { Navbar } from '@/components/Navbar'
+import type { Metadata } from 'next'
 
 const inter = Inter({ subsets: ['latin'] })
+
+export const metadata: Metadata = {
+  title: 'E-Voting App',
+  description: 'Secure electronic voting system',
+}
 
 export default async function RootLayout({
   children,
@@ -20,19 +26,10 @@ export default async function RootLayout({
       <body className={inter.className}>
         <Providers cookie={cookie}>
           <div className="min-h-screen flex flex-col">
-            {/* Global Header */}
-            <header className="w-full border-b px-6 py-4 flex justify-between items-center bg-background">
-              <h1 className="text-lg font-semibold">Web3 Election</h1>
-              {/* Connect button otomatis dari RainbowKit */}
-              <div className="flex items-center gap-4">
-                <ConnectButton />
-              </div>
-            </header>
-
+            <Navbar />
             {/* Page Content */}
             <main className="flex-1 px-6 py-8 bg-muted/5">{children}</main>
           </div>
-
           <Toaster />
         </Providers>
       </body>
