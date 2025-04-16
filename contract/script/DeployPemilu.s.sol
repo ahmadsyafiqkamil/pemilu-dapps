@@ -15,8 +15,8 @@ contract DeployPemilu is Script {
         Pemilu pemilu = new Pemilu();
 
         // Opsional: langsung tambahkan kandidat
-        pemilu.addCandidate("Alice");
-        pemilu.addCandidate("Bob");
+        pemilu.addCandidate("Alice", "imageCID");
+        pemilu.addCandidate("Bob", "imageCID");
 
         // Stop broadcasting
         vm.stopBroadcast();

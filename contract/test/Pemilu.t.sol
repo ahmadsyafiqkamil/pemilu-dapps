@@ -20,19 +20,20 @@ contract PemiluTest is Test {
 }
 
     function test_addCandidate() public {
-        pemilu.addCandidate("Candidate 1");
+        pemilu.addCandidate("Candidate 1", "imageCID");
 
-        (uint id, string memory name, uint voteCount) = pemilu.candidates(1);
+        (uint id, string memory name, uint voteCount, string memory imageCID) = pemilu.candidates(1);
 
         assertEq(id, 1);
         assertEq(name, "Candidate 1");
         assertEq(voteCount, 0);
+        assertEq(imageCID, "imageCID");
     }
 
     function test_register_and_vote() public {
-        pemilu.addCandidate("Candidate 1");
+        pemilu.addCandidate("Candidate 1", "imageCID");
 
-        uint startTime = block.timestamp + 1;
+        uint startTime = block.timestamp + 1;   
         uint endTime = startTime + 100;
         pemilu.setVotingPeriod(startTime, endTime);
 
@@ -44,12 +45,13 @@ contract PemiluTest is Test {
         vm.prank(voter1);
         pemilu.vote(1);
 
-        (,, uint votes) = pemilu.candidates(1);
+        (,, uint votes, string memory imageCID) = pemilu.candidates(1);
         assertEq(votes, 1);
+        assertEq(imageCID, "imageCID");
     }
 
     function test_double_vote() public {
-        pemilu.addCandidate("Candidate 1");
+        pemilu.addCandidate("Candidate 1", "imageCID");
 
         uint startTime = block.timestamp + 1;
         uint endTime = startTime + 100;

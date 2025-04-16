@@ -12,8 +12,9 @@ contract Pemilu is Ownable {
         uint id;
         string name;
         uint voteCount;
+        string imageCID;
     }
-
+    
     // Struktur pemilih
     struct Voter {
         bool isRegistered;
@@ -23,25 +24,34 @@ contract Pemilu is Ownable {
 
     // Jumlah kandidat
     uint public candidateCount;
-
+    
+    mapping(uint => bool) private idExists; // Untuk memastikan ID unik
     // Data kandidat dan pemilih
     mapping(uint => Candidate) public candidates;
     mapping(address => Voter) public voters;
     // Mapping untuk menyimpan daftar admin
     mapping(address => bool) public admins;
 
-    event CandidateAdded(uint id, string name);
+    event CandidateAdded(uint id, string name, string imageCID);
     event VoterRegistered(address indexed voter);
     event Voted(address indexed voter, uint candidateId);
     event WinnerDeclared(uint id, string name, uint voteCount);
     // Event untuk admin management
     event AdminAdded(address indexed admin);
     event AdminRemoved(address indexed admin);
+    // Event untuk penghapusan kandidat dan pemilih
+    event CandidateRemoved(uint id, string name);
+    event VoterRemoved(address indexed voter);
 
     // Modifier untuk mengecek apakah address adalah admin
     modifier onlyAdmin() {
         require(admins[msg.sender] || owner() == msg.sender, "Not an admin");
         _;
+    }
+
+    function generateId() private view returns (uint) {
+        uint randomId = uint(keccak256(abi.encodePacked(msg.sender, block.timestamp, candidateCount))) % 10**10;
+        return randomId;
     }
 
     // Constructor menggunakan Ownable (owner = deployer)
@@ -73,10 +83,18 @@ contract Pemilu is Ownable {
     }
 
     // Fungsi hanya untuk admin menambahkan kandidat
-    function addCandidate(string memory _name) public onlyAdmin {
+    function addCandidate(string memory _name, string memory _imageCID) public onlyAdmin {
+        uint id = generateId();
+
+        // Pastikan ID unik dengan rehash jika sudah ada
+        while (idExists[id]) {
+            id = uint(keccak256(abi.encodePacked(id, block.prevrandao))) % 10**10;
+        }
+
         candidateCount++;
-        candidates[candidateCount] = Candidate(candidateCount, _name, 0);
-        emit CandidateAdded(candidateCount, _name);
+        idExists[id] = true;  // Mark this ID as used
+        candidates[id] = Candidate(id, _name, 0, _imageCID);
+        emit CandidateAdded(id, _name, _imageCID);  // Use the generated id instead of candidateCount
     }
 
     // Fungsi voter untuk mendaftar ke sistem
@@ -87,13 +105,11 @@ contract Pemilu is Ownable {
     }
 
     function vote(uint _candidateId) public onlyDuringVoting {
-        // require(block.timestamp >= startTime && block.timestamp <= endTime, "Pemilihan tidak aktif");
-
         Voter storage sender = voters[msg.sender];
 
         require(sender.isRegistered, "Anda tidak terdaftar sebagai pemilih");
         require(!sender.hasVoted, "Sudah memilih");
-        require(_candidateId > 0 && _candidateId <= candidateCount, "Kandidat tidak valid");
+        require(candidates[_candidateId].id != 0, "Kandidat tidak valid");  // Check if candidate exists using the ID map
 
         sender.hasVoted = true;
         sender.voteCandidateId = _candidateId;
@@ -131,12 +147,40 @@ contract Pemilu is Ownable {
         return (winnerId, winner.name, winner.voteCount);
     }
 
-    modifier onlyDuringVoting() {
+   modifier onlyDuringVoting() {
+        require(startTime != 0 && endTime != 0, "Waktu pemilihan belum diatur");
         require(block.timestamp >= startTime && block.timestamp <= endTime, "Pemilihan tidak aktif");
         _;
     }
+    
     modifier onlyAfterVoting() {
         require(block.timestamp > endTime, "Pemilihan belum berakhir");
         _;
+    }
+
+    // Fungsi untuk menghapus kandidat (hanya admin)
+    function removeCandidate(uint _candidateId) public onlyAdmin {
+        require(candidates[_candidateId].id != 0, "Kandidat tidak ditemukan");
+        require(candidates[_candidateId].voteCount == 0, "Tidak dapat menghapus kandidat yang sudah memiliki suara");
+        
+        string memory candidateName = candidates[_candidateId].name;
+        
+        // Hapus data kandidat
+        delete candidates[_candidateId];
+        idExists[_candidateId] = false;
+        candidateCount--;
+        
+        emit CandidateRemoved(_candidateId, candidateName);
+    }
+
+    // Fungsi untuk menghapus pemilih (hanya admin)
+    function removeVoter(address _voterAddress) public onlyAdmin {
+        require(voters[_voterAddress].isRegistered, "Pemilih tidak terdaftar");
+        require(!voters[_voterAddress].hasVoted, "Tidak dapat menghapus pemilih yang sudah memilih");
+        
+        // Hapus data pemilih
+        delete voters[_voterAddress];
+        
+        emit VoterRemoved(_voterAddress);
     }
 }

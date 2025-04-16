@@ -43,15 +43,38 @@ def remove_admin(owner_address: str, admin_address: str):
     return build_transact(tx_function, owner_address)
 
 def get_all_candidates():
+    """Get all candidates from the contract"""
     candidate_count = contract.functions.candidateCount().call()
     candidates = []
-    for i in range(candidate_count):
-        candidate = contract.functions.candidates(i).call()
-        candidates.append({
-            "id": candidate[0],  # id
-            "name": candidate[1],  # name
-            "voteCount": candidate[2]  # voteCount
-        })
+    
+    # Get the event signature
+    event_signature = w3.keccak(text="CandidateAdded(uint256,string,string)").hex()
+    
+    # Get logs for candidate additions
+    logs = w3.eth.get_logs({
+        'address': contract_address,
+        'topics': [event_signature],
+        'fromBlock': 0,
+        'toBlock': 'latest'
+    })
+    
+    # Process each log
+    for log in logs:
+        # Decode the log
+        decoded_log = contract.events.CandidateAdded().process_log(log)
+        candidate_id = decoded_log['args']['id']
+        try:
+            candidate = contract.functions.candidates(candidate_id).call()
+            candidates.append({
+                "id": candidate[0],  # id
+                "name": candidate[1],  # name
+                "voteCount": candidate[2],  # voteCount
+                "imageCID": candidate[3]  # imageCID
+            })
+        except Exception as e:
+            print(f"Error getting candidate {candidate_id}: {str(e)}")
+            continue
+            
     return candidates
 
 def add_candidate(user_address: str, name: str):

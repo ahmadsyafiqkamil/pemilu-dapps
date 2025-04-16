@@ -1,9 +1,10 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-interface Candidate {
+export interface Candidate {
   id: number
   name: string
   voteCount: number
+  imageCID: string
 }
 
 interface AdminResponse {
