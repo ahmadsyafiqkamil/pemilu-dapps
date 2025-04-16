@@ -16,6 +16,10 @@ interface TransactionResponse {
   tx_hash: string
 }
 
+interface UploadResponse {
+  cid: string
+}
+
 export const api = {
   // Admin related functions
   checkAdminStatus: async (walletAddress: string): Promise<boolean> => {
@@ -73,14 +77,38 @@ export const api = {
     }
   },
 
-  addCandidate: async (address: string, name: string): Promise<TransactionResponse> => {
+  uploadImageToIPFS: async (file: File): Promise<string> => {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to upload image')
+      }
+
+      const data: UploadResponse = await response.json()
+      return data.cid
+    } catch (error) {
+      throw new Error(`Error uploading image: ${error}`)
+    }
+  },
+
+  addCandidate: async (name: string, imageCID: string): Promise<TransactionResponse> => {
     try {
       const response = await fetch(`${API_URL}/candidates`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ address, name }),
+        body: JSON.stringify({ 
+          name,
+          imageCID
+        }),
       })
       if (!response.ok) {
         throw new Error('Failed to add candidate')

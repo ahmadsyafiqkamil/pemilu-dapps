@@ -77,11 +77,11 @@ def get_all_candidates():
             
     return candidates
 
-def add_candidate(user_address: str, name: str):
+def add_candidate(user_address: str, name: str, imageCID: str):
     if not is_admin(user_address):
         raise Exception("Only admins can add candidates")
         
-    tx_function = contract.functions.addCandidate(name)
+    tx_function = contract.functions.addCandidate(name, imageCID)
     return build_transact(tx_function, user_address)
 
 def build_transact(tx_function, user_address):
