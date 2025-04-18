@@ -63,23 +63,8 @@ export default function CandidatePage() {
           throw new Error('Image size should be less than 5MB')
         }
 
-        // Upload to Pinata
-        const uploadFormData = new FormData()
-        uploadFormData.append('file', imageFile)
-        
-        const uploadResponse = await fetch('/api/upload', {
-          method: 'POST',
-          body: uploadFormData
-        })
-        
-        if (!uploadResponse.ok) {
-          const error = await uploadResponse.json()
-          throw new Error(error.message || 'Failed to upload image')
-        }
-        
-        const uploadData = await uploadResponse.json()
-        console.log('Upload response:', uploadData)
-        imageCID = uploadData.cid
+        // Upload to IPFS through our API
+        imageCID = await api.uploadImageToIPFS(imageFile)
       }
 
       // Now add the candidate with the CID and address

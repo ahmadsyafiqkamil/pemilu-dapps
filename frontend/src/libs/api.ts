@@ -1,4 +1,10 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const PINATA_API_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS'
+const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT
+
+if (!PINATA_JWT) {
+  throw new Error('Missing Pinata JWT - please check your environment variables')
+}
 
 export interface Candidate {
   id: number
@@ -16,8 +22,10 @@ interface TransactionResponse {
   tx_hash: string
 }
 
-interface UploadResponse {
-  cid: string
+interface PinataResponse {
+  IpfsHash: string
+  PinSize: number
+  Timestamp: string
 }
 
 export const api = {
@@ -81,20 +89,34 @@ export const api = {
     try {
       const formData = new FormData()
       formData.append('file', file)
+      
+      const metadata = JSON.stringify({
+        name: file.name
+      })
+      formData.append('pinataMetadata', metadata)
 
-      const response = await fetch(`${API_URL}/upload`, {
+      const pinataOptions = JSON.stringify({
+        cidVersion: 1
+      })
+      formData.append('pinataOptions', pinataOptions)
+
+      const response = await fetch(PINATA_API_URL, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Authorization': `Bearer ${PINATA_JWT}`
+        },
+        body: formData
       })
 
       if (!response.ok) {
-        throw new Error('Failed to upload image')
+        const error = await response.json()
+        throw new Error(error.message || `Failed to upload to Pinata: ${response.statusText}`)
       }
 
-      const data: UploadResponse = await response.json()
-      return data.cid
+      const result: PinataResponse = await response.json()
+      return result.IpfsHash
     } catch (error) {
-      throw new Error(`Error uploading image: ${error}`)
+      throw new Error(`Error uploading to IPFS: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   },
 
