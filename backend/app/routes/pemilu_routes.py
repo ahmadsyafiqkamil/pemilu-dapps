@@ -22,7 +22,7 @@ def add_candidate(data: models.Candidate):
         if not pemilu_services.is_admin(data.address):
             raise HTTPException(status_code=403, detail="Only admins can add candidates")
             
-        tx = pemilu_services.add_candidate(user_address=data.address, name=data.name)
+        tx = pemilu_services.add_candidate(user_address=data.address, name=data.name, imageCID=data.imageCID)
         return {"message": "Candidate added successfully", "tx_hash": tx}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

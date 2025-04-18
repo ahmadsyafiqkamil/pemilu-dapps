@@ -1,6 +1,5 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   images: {
     remotePatterns: [
       {
@@ -8,8 +7,13 @@ const nextConfig: NextConfig = {
         hostname: 'ipfs.io',
         pathname: '/ipfs/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'cyan-electoral-perch-838.mypinata.cloud',
+        pathname: '/**',
+      }
     ],
   },
-};
+}
 
-export default nextConfig;
+module.exports = nextConfig

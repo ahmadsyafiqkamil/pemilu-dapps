@@ -98,7 +98,7 @@ export const api = {
     }
   },
 
-  addCandidate: async (name: string, imageCID: string): Promise<TransactionResponse> => {
+  addCandidate: async (name: string, imageCID: string, address: string): Promise<TransactionResponse> => {
     try {
       const response = await fetch(`${API_URL}/candidates`, {
         method: 'POST',
@@ -107,15 +107,17 @@ export const api = {
         },
         body: JSON.stringify({ 
           name,
-          imageCID
+          imageCID,
+          address
         }),
       })
       if (!response.ok) {
-        throw new Error('Failed to add candidate')
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to add candidate');
       }
       return response.json()
     } catch (error) {
-      throw new Error(`Error adding candidate: ${error}`)
+      throw error instanceof Error ? error : new Error('Error adding candidate');
     }
   },
 } 

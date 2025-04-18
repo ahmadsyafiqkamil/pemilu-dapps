@@ -9,8 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 import { ImageIcon } from "@/components/ui/icons"
 import Image from 'next/image'
+import { useAccount } from 'wagmi'
 
 export default function CandidatePage() {
+  const { address } = useAccount()
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -34,22 +36,65 @@ export default function CandidatePage() {
     setIsSubmitting(true)
     setError(null)
 
+    if (!address) {
+      setError('Please connect your wallet first')
+      setIsSubmitting(false)
+      return
+    }
+
     try {
       const formData = new FormData(e.currentTarget)
       const name = formData.get('name') as string
-      const imageFile = (formData.get('image') as File)
+      const imageFile = formData.get('image') as File
+
+      if (!name.trim()) {
+        throw new Error('Please enter a candidate name')
+      }
 
       let imageCID = ''
       if (imageFile && imageFile.size > 0) {
-        imageCID = await api.uploadImageToIPFS(imageFile)
+        // Validate file type
+        if (!imageFile.type.startsWith('image/')) {
+          throw new Error('Please upload an image file')
+        }
+
+        // Validate file size (max 5MB)
+        if (imageFile.size > 5 * 1024 * 1024) {
+          throw new Error('Image size should be less than 5MB')
+        }
+
+        // Upload to Pinata
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', imageFile)
+        
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadFormData
+        })
+        
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json()
+          throw new Error(error.message || 'Failed to upload image')
+        }
+        
+        const uploadData = await uploadResponse.json()
+        console.log('Upload response:', uploadData)
+        imageCID = uploadData.cid
       }
 
-      await api.addCandidate(name, imageCID)
+      // Now add the candidate with the CID and address
+      console.log('Adding candidate:', { name, imageCID, address })
+      const addResponse = await api.addCandidate(name, imageCID, address)
+      console.log('Add candidate response:', addResponse)
+      
       setIsDialogOpen(false)
       loadCandidates()
     } catch (err) {
+      console.error('Error details:', err)
       if (err instanceof Error) {
         setError(err.message)
+      } else {
+        setError('An unexpected error occurred')
       }
     } finally {
       setIsSubmitting(false)
@@ -64,7 +109,7 @@ export default function CandidatePage() {
           <DialogTrigger asChild>
             <Button>Add Candidate</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent aria-label="Add New Candidate Form">
             <DialogHeader>
               <DialogTitle>Add New Candidate</DialogTitle>
             </DialogHeader>
@@ -104,9 +149,11 @@ export default function CandidatePage() {
               <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden">
                 {candidate.imageCID ? (
                   <Image
-                    src={`https://ipfs.io/ipfs/${candidate.imageCID}`}
+                    src={`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${candidate.imageCID}`}
                     alt={candidate.name}
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority={false}
                     className="object-cover"
                   />
                 ) : (
