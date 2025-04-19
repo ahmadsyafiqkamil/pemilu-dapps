@@ -28,6 +28,24 @@ interface PinataResponse {
   Timestamp: string
 }
 
+interface RawTransaction {
+  value: number;
+  from: string;
+  nonce: number;
+  gas: number;
+  maxFeePerGas: number;
+  maxPriorityFeePerGas: number;
+  type: number;
+  chainId: number;
+  to: string;
+  data: string;
+}
+
+interface AddCandidateResponse {
+  message: string;
+  tx_hash: RawTransaction;
+}
+
 export const api = {
   // Admin related functions
   checkAdminStatus: async (walletAddress: string): Promise<boolean> => {
@@ -77,11 +95,13 @@ export const api = {
     try {
       const response = await fetch(`${API_URL}/candidates`)
       if (!response.ok) {
-        throw new Error('Failed to fetch candidates')
+        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(errorData.detail || `Failed to fetch candidates: ${response.status} ${response.statusText}`);
       }
       return response.json()
     } catch (error) {
-      throw new Error(`Error fetching candidates: ${error}`)
+      console.error('Error in getAllCandidates:', error);
+      throw error instanceof Error ? error : new Error('Failed to fetch candidates');
     }
   },
 
@@ -120,7 +140,7 @@ export const api = {
     }
   },
 
-  addCandidate: async (name: string, imageCID: string, address: string): Promise<TransactionResponse> => {
+  addCandidate: async (name: string, imageCID: string, address: string): Promise<AddCandidateResponse> => {
     try {
       const response = await fetch(`${API_URL}/candidates`, {
         method: 'POST',

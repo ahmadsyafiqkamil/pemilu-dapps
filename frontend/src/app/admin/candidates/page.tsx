@@ -9,15 +9,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 import { ImageIcon } from "@/components/ui/icons"
 import Image from 'next/image'
-import { useAccount } from 'wagmi'
+import { useAccount, useWalletClient, usePublicClient } from 'wagmi'
+import { toast } from 'sonner'
 
 export default function CandidatePage() {
   const { address } = useAccount()
+  const { data: walletClient } = useWalletClient()
+  const publicClient = usePublicClient()
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [transactionHash, setTransactionHash] = useState<string | null>(null)
+  const [transactionStatus, setTransactionStatus] = useState<'pending' | 'confirmed' | 'failed' | null>(null)
 
   useEffect(() => {
     loadCandidates()
@@ -35,8 +40,10 @@ export default function CandidatePage() {
     e.preventDefault()
     setIsSubmitting(true)
     setError(null)
+    setTransactionHash(null)
+    setTransactionStatus(null)
 
-    if (!address) {
+    if (!address || !walletClient || !publicClient) {
       setError('Please connect your wallet first')
       setIsSubmitting(false)
       return
@@ -67,23 +74,97 @@ export default function CandidatePage() {
         imageCID = await api.uploadImageToIPFS(imageFile)
       }
 
-      // Now add the candidate with the CID and address
-      console.log('Adding candidate:', { name, imageCID, address })
-      const addResponse = await api.addCandidate(name, imageCID, address)
-      console.log('Add candidate response:', addResponse)
+      // Get the transaction data from backend
+      const response = await api.addCandidate(name, imageCID, address)
+      console.log('Backend response:', response)
+
+      // Sign and send the transaction
+      const { tx_hash: tx } = response
+      const hash = await walletClient.sendTransaction({
+        to: tx.to as `0x${string}`,
+        data: tx.data as `0x${string}`,
+        value: BigInt(tx.value),
+        type: (tx.type as unknown) as 'eip1559',
+        maxFeePerGas: BigInt(tx.maxFeePerGas),
+        maxPriorityFeePerGas: BigInt(tx.maxPriorityFeePerGas),
+        gas: BigInt(tx.gas),
+        chainId: tx.chainId,
+      })
+
+      setTransactionHash(hash)
+      setTransactionStatus('pending')
+      
+      // Wait for transaction confirmation
+      toast.promise(
+        (async () => {
+          try {
+            const receipt = await publicClient.waitForTransactionReceipt({ hash })
+            if (receipt.status === 'success') {
+              setTransactionStatus('confirmed')
+              console.log('Transaction confirmed:', receipt)
+              console.log('Block number:', receipt.blockNumber)
+              loadCandidates() // Refresh the candidates list
+              return receipt
+            } else {
+              setTransactionStatus('failed')
+              throw new Error('Transaction failed')
+            }
+          } catch (error) {
+            setTransactionStatus('failed')
+            throw error
+          }
+        })(),
+        {
+          loading: 'Processing transaction...',
+          success: (receipt) => `Transaction confirmed! Block: ${receipt.blockNumber}`,
+          error: 'Transaction failed'
+        }
+      )
       
       setIsDialogOpen(false)
-      loadCandidates()
     } catch (err) {
       console.error('Error details:', err)
       if (err instanceof Error) {
         setError(err.message)
+        toast.error(err.message)
       } else {
         setError('An unexpected error occurred')
+        toast.error('An unexpected error occurred')
       }
+      setTransactionStatus('failed')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Render transaction status
+  const renderTransactionStatus = () => {
+    if (!transactionHash) return null;
+
+    return (
+      <div className="mt-4 p-4 rounded-lg border">
+        <h3 className="font-semibold">Transaction Status</h3>
+        <p className="mt-2">
+          Hash: <a 
+            href={`https://sepolia.etherscan.io/tx/${transactionHash}`} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-600"
+          >
+            {transactionHash.slice(0, 6)}...{transactionHash.slice(-4)}
+          </a>
+        </p>
+        <p className="mt-1">
+          Status: <span className={`font-medium ${
+            transactionStatus === 'confirmed' ? 'text-green-600' :
+            transactionStatus === 'failed' ? 'text-red-600' :
+            'text-yellow-600'
+          }`}>
+            {transactionStatus || 'Unknown'}
+          </span>
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -114,8 +195,9 @@ export default function CandidatePage() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Adding...' : 'Add Candidate'}
+                {isSubmitting ? 'Processing...' : 'Add Candidate'}
               </Button>
+              {renderTransactionStatus()}
             </form>
           </DialogContent>
         </Dialog>

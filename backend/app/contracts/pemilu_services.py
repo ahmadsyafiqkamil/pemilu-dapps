@@ -9,12 +9,12 @@ ABI_PATH = os.path.join(BASE_DIR, 'abis', 'Pemilu.json')
 with open(ABI_PATH, 'r') as f:
     abi = json.load(f)
 
-w3 = Web3(Web3.HTTPProvider(os.getenv("RPC_URL")))
+w3 = Web3(Web3.HTTPProvider(os.getenv("RPC_URL_SEPOLIA")))
 if not w3.is_connected():
     raise Exception("Failed to connect to Ethereum node")
 
 
-contract_address = os.getenv("CONTRACT_ADDRESS")
+contract_address = os.getenv("CONTRACT_ADDRESS_SEPOLIA")
 contract = w3.eth.contract(address=contract_address, abi=abi)
 
 def is_contract_owner(address: str) -> bool:
@@ -47,8 +47,8 @@ def get_all_candidates():
     candidate_count = contract.functions.candidateCount().call()
     candidates = []
     
-    # Get the event signature
-    event_signature = w3.keccak(text="CandidateAdded(uint256,string,string)").hex()
+    # Get the event signature and ensure it has 0x prefix
+    event_signature = "0x" + w3.keccak(text="CandidateAdded(uint256,string,string)").hex().lstrip("0x")
     
     # Get logs for candidate additions
     logs = w3.eth.get_logs({
