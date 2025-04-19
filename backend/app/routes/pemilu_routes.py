@@ -27,6 +27,10 @@ def add_candidate(data: models.Candidate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/candidates/{candidate_id}")
+def get_candidate_details(candidate_id: int):
+    return pemilu_services.get_candidate_details(candidate_id)
+
 @router.post("/admins")
 def add_admin(owner_address: str = Query(..., description="Contract owner address"), 
               new_admin_address: str = Query(..., description="New admin address")):

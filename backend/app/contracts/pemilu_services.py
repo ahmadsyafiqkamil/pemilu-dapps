@@ -77,6 +77,20 @@ def get_all_candidates():
             
     return candidates
 
+def get_candidate_details(candidate_id: int):
+    """Get details of a specific candidate"""
+    try:
+        candidate_details = contract.functions.getCandidateDetails(candidate_id).call()
+        return {
+            "id": candidate_details[0],
+            "name": candidate_details[1],
+            "voteCount": candidate_details[2],
+            "imageCID": candidate_details[3]
+        }
+    except Exception as e:
+        print(f"Error getting candidate details for {candidate_id}: {str(e)}")
+        return None
+
 def add_candidate(user_address: str, name: str, imageCID: str):
     if not is_admin(user_address):
         raise Exception("Only admins can add candidates")

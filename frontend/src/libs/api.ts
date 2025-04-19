@@ -105,6 +105,20 @@ export const api = {
     }
   },
 
+  getCandidateDetails: async (candidateId: number): Promise<Candidate> => {
+    try {
+      const response = await fetch(`${API_URL}/candidates/${candidateId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch candidate details')
+      }
+      return response.json()
+    } catch (error) {
+      console.error('Error in getCandidateDetails:', error)
+      throw error instanceof Error ? error : new Error('Failed to fetch candidate details')
+    }
+  },
+  
+
   uploadImageToIPFS: async (file: File): Promise<string> => {
     try {
       const formData = new FormData()

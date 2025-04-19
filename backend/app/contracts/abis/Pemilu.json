@@ -116,6 +116,40 @@
   },
   {
     "type": "function",
+    "name": "getCandidateDetails",
+    "inputs": [
+      {
+        "name": "_candidateId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "id",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "voteCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "imageCID",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getVoteCount",
     "inputs": [
       {

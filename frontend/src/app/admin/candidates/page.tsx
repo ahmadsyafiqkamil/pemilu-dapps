@@ -11,6 +11,7 @@ import { ImageIcon } from "@/components/ui/icons"
 import Image from 'next/image'
 import { useAccount, useWalletClient, usePublicClient } from 'wagmi'
 import { toast } from 'sonner'
+import Link from 'next/link'
 
 export default function CandidatePage() {
   const { address } = useAccount()
@@ -21,8 +22,6 @@ export default function CandidatePage() {
   const [error, setError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [transactionHash, setTransactionHash] = useState<string | null>(null)
-  const [transactionStatus, setTransactionStatus] = useState<'pending' | 'confirmed' | 'failed' | null>(null)
 
   useEffect(() => {
     loadCandidates()
@@ -40,8 +39,6 @@ export default function CandidatePage() {
     e.preventDefault()
     setIsSubmitting(true)
     setError(null)
-    setTransactionHash(null)
-    setTransactionStatus(null)
 
     if (!address || !walletClient || !publicClient) {
       setError('Please connect your wallet first')
@@ -91,26 +88,20 @@ export default function CandidatePage() {
         chainId: tx.chainId,
       })
 
-      setTransactionHash(hash)
-      setTransactionStatus('pending')
-      
       // Wait for transaction confirmation
       toast.promise(
         (async () => {
           try {
             const receipt = await publicClient.waitForTransactionReceipt({ hash })
             if (receipt.status === 'success') {
-              setTransactionStatus('confirmed')
               console.log('Transaction confirmed:', receipt)
               console.log('Block number:', receipt.blockNumber)
               loadCandidates() // Refresh the candidates list
               return receipt
             } else {
-              setTransactionStatus('failed')
               throw new Error('Transaction failed')
             }
           } catch (error) {
-            setTransactionStatus('failed')
             throw error
           }
         })(),
@@ -131,40 +122,9 @@ export default function CandidatePage() {
         setError('An unexpected error occurred')
         toast.error('An unexpected error occurred')
       }
-      setTransactionStatus('failed')
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  // Render transaction status
-  const renderTransactionStatus = () => {
-    if (!transactionHash) return null;
-
-    return (
-      <div className="mt-4 p-4 rounded-lg border">
-        <h3 className="font-semibold">Transaction Status</h3>
-        <p className="mt-2">
-          Hash: <a 
-            href={`https://sepolia.etherscan.io/tx/${transactionHash}`} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-600"
-          >
-            {transactionHash.slice(0, 6)}...{transactionHash.slice(-4)}
-          </a>
-        </p>
-        <p className="mt-1">
-          Status: <span className={`font-medium ${
-            transactionStatus === 'confirmed' ? 'text-green-600' :
-            transactionStatus === 'failed' ? 'text-red-600' :
-            'text-yellow-600'
-          }`}>
-            {transactionStatus || 'Unknown'}
-          </span>
-        </p>
-      </div>
-    )
   }
 
   return (
@@ -197,7 +157,6 @@ export default function CandidatePage() {
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? 'Processing...' : 'Add Candidate'}
               </Button>
-              {renderTransactionStatus()}
             </form>
           </DialogContent>
         </Dialog>
@@ -208,35 +167,37 @@ export default function CandidatePage() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {candidates.map((candidate) => (
-          <Card key={candidate.id}>
-            <Card.Header>
-              <Card.Title>{candidate.name}</Card.Title>
-            </Card.Header>
-            <Card.Content>
-              <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden">
-                {candidate.imageCID ? (
-                  <Image
-                    src={`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${candidate.imageCID}`}
-                    alt={candidate.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    priority={false}
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground" />
-                      <p className="mt-2 text-sm text-muted-foreground">No image available</p>
+          <Link href={`/admin/candidates/${candidate.id}`} key={candidate.id}>
+            <Card className="transition-transform hover:scale-105">
+              <Card.Header>
+                <Card.Title>{candidate.name}</Card.Title>
+              </Card.Header>
+              <Card.Content>
+                <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden">
+                  {candidate.imageCID ? (
+                    <Image
+                      src={`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${candidate.imageCID}`}
+                      alt={candidate.name}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      priority={false}
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground" />
+                        <p className="mt-2 text-sm text-muted-foreground">No image available</p>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </Card.Content>
-            <Card.Footer>
-              <p className="text-sm text-gray-500">Votes: {candidate.voteCount}</p>
-            </Card.Footer>
-          </Card>
+                  )}
+                </div>
+              </Card.Content>
+              <Card.Footer>
+                <p className="text-sm text-gray-500">Votes: {candidate.voteCount}</p>
+              </Card.Footer>
+            </Card>
+          </Link>
         ))}
       </div>
     </div>

@@ -183,4 +183,16 @@ contract Pemilu is Ownable {
         
         emit VoterRemoved(_voterAddress);
     }
+
+    // Fungsi untuk mendapatkan detail kandidat
+    function getCandidateDetails(uint _candidateId) public view returns (
+        uint id,
+        string memory name,
+        uint voteCount,
+        string memory imageCID
+    ) {
+        require(candidates[_candidateId].id != 0, "Kandidat tidak ditemukan");
+        Candidate memory candidate = candidates[_candidateId];
+        return (candidate.id, candidate.name, candidate.voteCount, candidate.imageCID);
+    }
 }
