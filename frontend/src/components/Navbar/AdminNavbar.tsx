@@ -13,7 +13,7 @@ export const AdminNavbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/admin/dashboard" className="text-xl font-bold">
+              <Link href="/admin/dashboard" className="text-xl font-bold text-indigo-600">
                 Admin Panel
               </Link>
             </div>
@@ -39,13 +39,18 @@ export const AdminNavbar = () => {
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-500">
-              {user?.address.slice(0, 6)}...{user?.address.slice(-4)}
-            </span>
+            <div className="flex items-center space-x-2">
+              <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
+                Admin
+              </span>
+              {/* <span className="text-sm text-gray-500">
+                {user?.address.slice(0, 6)}...{user?.address.slice(-4)}
+              </span> */}
+            </div>
             <ConnectButton />
           </div>
         </div>
       </div>
     </nav>
   );
-}; 
+};

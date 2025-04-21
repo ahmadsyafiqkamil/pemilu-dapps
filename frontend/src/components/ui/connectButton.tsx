@@ -55,13 +55,13 @@ export const ConnectButton = () => {
   }
 
   return (
-    <div className="max-w-5xl w-full flex items-center justify-between">
-      <div
-        className="flex justify-center items-center px-4 py-2 border border-neutral-700 bg-neutral-800/30 rounded-xl font-mono font-bold gap-x-2 cursor-pointer"
+    <div className="flex items-center">
+      <button
+        className="flex items-center gap-2 px-4 py-2 border border-neutral-700 bg-neutral-800/30 rounded-xl font-mono text-sm hover:bg-neutral-800/50 transition-colors"
         onClick={() => openAccountModal?.()}
       >
         <div
-          className="h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
+          className="h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0"
           style={{
             backgroundColor,
             boxShadow: '0px 2px 2px 0px rgba(81, 98, 255, 0.20)',
@@ -69,8 +69,10 @@ export const ConnectButton = () => {
         >
           {emoji}
         </div>
-        <p>Account</p>
-      </div>
+        <span>
+          {address?.slice(0, 6)}...{address?.slice(-4)}
+        </span>
+      </button>
     </div>
   )
 }

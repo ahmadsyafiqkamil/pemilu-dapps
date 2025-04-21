@@ -9,18 +9,20 @@ import { useAuth } from '@/hooks/useAuth'
 export default function Home() {
   const { isConnected } = useAccount()
   const router = useRouter()
-  const { isAdmin, loading } = useAuth()
+  const { isAdmin, isVoter, loading } = useAuth()
 
   // ⏩ Redirect berdasarkan role dari backend
   useEffect(() => {
     if (!loading && isConnected) {
       if (isAdmin) {
         router.push('/admin/dashboard')
-      } else {
+      } else if (isVoter) {
         router.push('/voter/dashboard')
+      } else {
+        router.push('/')
       }
     }
-  }, [isAdmin, loading, isConnected, router])
+  }, [isAdmin, isVoter, loading, isConnected, router])
 
   // Jika belum connect, tampilkan notice
   if (!isConnected) {
