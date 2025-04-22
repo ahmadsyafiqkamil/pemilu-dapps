@@ -92,3 +92,26 @@ def check_voter(address: str):
         return {"is_registered": is_registered}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/voters/register")
+def register_voter(address: str = Query(..., description="Voter address")):
+    if not Web3.is_address(address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        tx = pemilu_services.register_voter(address)
+        return {"message": "Voter registered successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.delete("/voters/{voter_address}")
+def remove_voter(data: models.RemoveVoter):
+    if not Web3.is_address(data.address) or not Web3.is_address(data.voterAddress):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        tx = pemilu_services.remove_voter(user_address=data.address, voter_address=data.voterAddress)
+        return {"message": "Voter removed successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    

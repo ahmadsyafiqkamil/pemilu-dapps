@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 export default function Home() {
   const { isConnected } = useAccount()
   const router = useRouter()
-  const { isAdmin, isVoter, isUnregistered, loading } = useAuth()
+  const { user, isAdmin, isVoter, isUnregistered, loading } = useAuth()
 
   // ⏩ Redirect berdasarkan role dari backend
   useEffect(() => {
@@ -28,6 +28,8 @@ export default function Home() {
   if (!isConnected) {
     return <ConnectWalletNotice />
   }
+
+  console.log("user address: ", user?.address, "isAdmin: ", isAdmin, "isVoter: ", isVoter, "isUnregistered: ", isUnregistered)
 
   // Render loading state saat mengecek role atau redirect
   return (

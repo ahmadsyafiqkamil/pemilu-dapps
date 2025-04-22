@@ -222,4 +222,19 @@ export const api = {
     }
   },
   
+  registerVoter: async (walletAddress: string): Promise<TransactionResponse> => {
+    try {
+      const registerResponse = await fetch(`${API_URL}/voters/register?address=${walletAddress}`, {
+        method: 'POST',
+      })
+      if (!registerResponse.ok) {
+        throw new Error('Failed to register voter')
+      }
+      return registerResponse.json()
+    } catch (error) {
+      throw error instanceof Error ? error : new Error('Error registering voter')
+    }
+  },
+
+  
 } 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { api } from '@/libs/api';
 
@@ -14,41 +14,41 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (isConnected && address) {
-        try {
-          // Cek status admin menggunakan API
-          const isAdmin = await api.checkAdminStatus(address);
-          
-          if (isAdmin) {
-            setUser({
-              address,
-              role: 'admin',
-            });
-          } else {
-            // Jika bukan admin, cek apakah terdaftar sebagai voter
-            const isRegistered = await api.checkVoterStatus(address);
-            setUser({
-              address,
-              role: isRegistered ? 'voter' : 'unregistered',
-            });
-          }
-        } catch (error) {
-          console.error('Error checking user status:', error);
+  const checkAuth = useCallback(async () => {
+    if (isConnected && address) {
+      try {
+        // Cek status admin menggunakan API
+        const isAdmin = await api.checkAdminStatus(address);
+        
+        if (isAdmin) {
           setUser({
             address,
-            role: 'unregistered', // Default ke unregistered jika terjadi error
+            role: 'admin',
+          });
+        } else {
+          // Jika bukan admin, cek apakah terdaftar sebagai voter
+          const isRegistered = await api.checkVoterStatus(address);
+          setUser({
+            address,
+            role: isRegistered ? 'voter' : 'unregistered',
           });
         }
-      } else {
-        setUser(null);
+      } catch (error) {
+        console.error('Error checking user status:', error);
+        setUser({
+          address,
+          role: 'unregistered', // Default ke unregistered jika terjadi error
+        });
       }
-      setLoading(false);
-    };
-
-    checkAuth();
+    } else {
+      setUser(null);
+    }
+    setLoading(false);
   }, [address, isConnected]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   return {
     user,
@@ -57,5 +57,6 @@ export const useAuth = () => {
     isVoter: user?.role === 'voter',
     isUnregistered: user?.role === 'unregistered',
     isAuthenticated: isConnected && user !== null,
+    refreshAuth: checkAuth, // Expose the refresh function
   };
 }; 

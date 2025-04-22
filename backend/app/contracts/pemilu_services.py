@@ -128,6 +128,30 @@ def add_candidate(user_address: str, name: str, imageCID: str):
     tx_function = contract.functions.addCandidate(name, imageCID)
     return build_transact(tx_function, user_address)
 
+
+def is_voter(address: str) -> bool:
+    """Check if the given address is registered as a voter"""
+    try:
+        voter_data = contract.functions.voters(Web3.to_checksum_address(address)).call()
+        return voter_data[0]  # isRegistered is the first field in Voter struct
+    except Exception as e:
+        print(f"Error checking voter status for {address}: {str(e)}")
+        return False
+    
+def register_voter(user_address: str):
+    """Register a new voter"""
+    tx_function = contract.functions.registerAsVoter()
+    return build_transact(tx_function, user_address)   
+
+def remove_voter(user_address: str, voter_address: str):
+    """Remove a voter from the contract"""
+    if not is_admin(user_address):
+        raise Exception("Only admins can remove voters")
+    
+    tx_function = contract.functions.removeVoter(voter_address)
+    return build_transact(tx_function, user_address)
+
+
 def build_transact(tx_function, user_address):
     gas_limit, gas_params = utils.get_gas_parameters(tx_function, user_address)
     nonce = w3.eth.get_transaction_count(user_address)
@@ -149,11 +173,4 @@ def build_transact(tx_function, user_address):
 
     return tx
 
-def is_voter(address: str) -> bool:
-    """Check if the given address is registered as a voter"""
-    try:
-        voter_data = contract.functions.voters(Web3.to_checksum_address(address)).call()
-        return voter_data[0]  # isRegistered is the first field in Voter struct
-    except Exception as e:
-        print(f"Error checking voter status for {address}: {str(e)}")
-        return False
+
