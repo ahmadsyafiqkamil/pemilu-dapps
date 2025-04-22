@@ -18,8 +18,8 @@ interface AdminResponse {
 }
 
 interface TransactionResponse {
-  message: string
-  tx_hash: string
+  message: string;
+  tx_hash: RawTransaction;
 }
 
 interface PinataResponse {
@@ -117,8 +117,7 @@ export const api = {
       throw error instanceof Error ? error : new Error('Failed to fetch candidate details')
     }
   },
-  
-
+  // Upload image to IPFS
   uploadImageToIPFS: async (file: File): Promise<string> => {
     try {
       const formData = new FormData()
@@ -176,4 +175,32 @@ export const api = {
       throw error instanceof Error ? error : new Error('Error adding candidate');
     }
   },
+
+  // Remove candidate
+  removeCandidate: async (candidateId: number, address: string): Promise<TransactionResponse> => {
+    try {
+      const response = await fetch(`${API_URL}/candidates/${candidateId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          address,
+          candidateId
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to remove candidate. Make sure you are an admin.')
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error in removeCandidate:', error)
+      throw error instanceof Error ? error : new Error('Failed to remove candidate')
+    }
+  },
+  
 } 

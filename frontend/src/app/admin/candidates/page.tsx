@@ -5,13 +5,12 @@ import { api } from '@/libs/api'
 import type { Candidate } from '@/libs/api'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { ImageIcon } from "@/components/ui/icons"
 import Image from 'next/image'
 import { useAccount, useWalletClient, usePublicClient } from 'wagmi'
 import { toast } from 'sonner'
 import Link from 'next/link'
+import { CandidateFormDialog } from './components/CandidateFormDialog'
 
 export default function CandidatePage() {
   const { address } = useAccount()
@@ -27,12 +26,20 @@ export default function CandidatePage() {
     loadCandidates()
   }, [])
 
-  const loadCandidates = () => {
+  const loadCandidates = async () => {
     setLoading(true)
-    api.getAllCandidates()
-      .then(setCandidates)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
+    setError(null) // Reset error state
+    try {
+      const data = await api.getAllCandidates()
+      console.log('Loaded candidates:', data)
+      setCandidates(data || []) // Ensure we always set an array
+    } catch (err) {
+      console.error('Error loading candidates:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load candidates')
+      setCandidates([]) // Reset candidates on error
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleAddCandidate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -127,79 +134,166 @@ export default function CandidatePage() {
     }
   }
 
+  const handleRemoveCandidate = async (candidateId: number) => {
+    if (!address || !walletClient || !publicClient) {
+      toast.error('Silahkan hubungkan wallet anda terlebih dahulu')
+      return
+    }
+
+    try {
+      const response = await api.removeCandidate(candidateId, address)
+      console.log('Backend response:', response)
+
+      const { tx_hash: tx } = response
+      
+      // Show loading toast while waiting for signature
+      toast.loading('Menunggu tanda tangan...')
+      
+      const hash = await walletClient.sendTransaction({
+        to: tx.to as `0x${string}`,
+        data: tx.data as `0x${string}`,
+        value: BigInt(tx.value),
+        type: (tx.type as unknown) as 'eip1559',
+        maxFeePerGas: BigInt(tx.maxFeePerGas),
+        maxPriorityFeePerGas: BigInt(tx.maxPriorityFeePerGas),
+        gas: BigInt(tx.gas),
+        chainId: tx.chainId,
+      })
+
+      // Dismiss the signature waiting toast
+      toast.dismiss()
+
+      // Wait for transaction confirmation
+      await toast.promise(
+        (async () => {
+          try {
+            const receipt = await publicClient.waitForTransactionReceipt({ hash })
+            console.log('Transaction receipt:', receipt)
+            
+            if (receipt.status === 'success') {
+              // Only remove the candidate from state after successful transaction
+              setCandidates(prev => prev.filter(c => c.id !== candidateId))
+              // Double check the state by reloading
+              await loadCandidates()
+              return receipt
+            } else {
+              throw new Error('Transaksi gagal')
+            }
+          } catch (error) {
+            console.error('Transaction error:', error)
+            throw error
+          }
+        })(),
+        {
+          loading: 'Memproses transaksi...',
+          success: (receipt) => `Kandidat berhasil dihapus! Block: ${receipt.blockNumber}`,
+          error: (err) => `Gagal menghapus kandidat: ${err instanceof Error ? err.message : 'Unknown error'}`
+        }
+      )
+
+    } catch (err) {
+      console.error('Error details:', err)
+      toast.error(err instanceof Error ? err.message : 'Gagal menghapus kandidat')
+    }
+  }
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Candidates</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Add Candidate</Button>
-          </DialogTrigger>
-          <DialogContent aria-label="Add New Candidate Form">
-            <DialogHeader>
-              <DialogTitle>Add New Candidate</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAddCandidate} className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
-                <Input id="name" name="name" required />
-              </div>
-              <div>
-                <label htmlFor="image" className="block text-sm font-medium mb-1">Image</label>
-                <Input 
-                  id="image" 
-                  name="image" 
-                  type="file" 
-                  accept="image/*"
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Processing...' : 'Add Candidate'}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <CandidateFormDialog
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          onSubmit={handleAddCandidate}
+          isSubmitting={isSubmitting}
+          triggerButton={<Button>Add Candidate</Button>}
+        />
       </div>
 
-      {loading && <p>Loading...</p>}
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {loading && (
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {candidates.map((candidate) => (
-          <Link href={`/admin/candidates/${candidate.id}`} key={candidate.id}>
-            <Card className="transition-transform hover:scale-105">
-              <Card.Header>
-                <Card.Title>{candidate.name}</Card.Title>
-              </Card.Header>
-              <Card.Content>
-                <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden">
-                  {candidate.imageCID ? (
-                    <Image
-                      src={`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${candidate.imageCID}`}
-                      alt={candidate.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      priority={false}
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground" />
-                        <p className="mt-2 text-sm text-muted-foreground">No image available</p>
+      {error && (
+        <div className="bg-destructive/10 text-destructive rounded-lg p-4 mb-6">
+          <p>{error}</p>
+        </div>
+      )}
+      
+      {!loading && !error && candidates.length === 0 && (
+        <div className="flex flex-col items-center justify-center min-h-[400px] bg-muted/20 rounded-lg p-8">
+          <div className="text-center max-w-md">
+            <div className="bg-background rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <ImageIcon className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Belum Ada Kandidat</h3>
+            <p className="text-muted-foreground mb-6">
+              Mulai dengan menambahkan kandidat pertama untuk pemilihan.
+            </p>
+            <CandidateFormDialog
+              isOpen={isDialogOpen}
+              onOpenChange={setIsDialogOpen}
+              onSubmit={handleAddCandidate}
+              isSubmitting={isSubmitting}
+              triggerButton={
+                <Button size="lg">
+                  Tambah Kandidat Pertama
+                </Button>
+              }
+            />
+          </div>
+        </div>
+      )}
+      
+      {!loading && !error && candidates.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {candidates.map((candidate) => (
+            <Link href={`/admin/candidates/${candidate.id}`} key={candidate.id}>
+              <Card className="transition-transform hover:scale-105">
+                <Card.Header>
+                  <Card.Title>{candidate.name}</Card.Title>
+                </Card.Header>
+                <Card.Content>
+                  <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden">
+                    {candidate.imageCID ? (
+                      <Image
+                        src={`https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/ipfs/${candidate.imageCID}`}
+                        alt={candidate.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        loading="lazy"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <div className="text-center">
+                          <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground" />
+                          <p className="mt-2 text-sm text-muted-foreground">No image available</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </Card.Content>
-              <Card.Footer>
-                <p className="text-sm text-gray-500">Votes: {candidate.voteCount}</p>
-              </Card.Footer>
-            </Card>
-          </Link>
-        ))}
-      </div>
+                    )}
+                  </div>
+                </Card.Content>
+                <Card.Footer className="flex justify-between items-center">
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleRemoveCandidate(candidate.id);
+                    }}
+                  >
+                    Remove
+                  </Button>
+                  <p className="text-sm text-muted-foreground">Votes: {candidate.voteCount}</p>
+                </Card.Footer>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

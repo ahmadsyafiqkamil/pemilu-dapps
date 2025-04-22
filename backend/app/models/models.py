@@ -10,3 +10,7 @@ class CandidateDetails(BaseModel):
     name: str
     voteCount: int
     imageCID: str
+
+class RemoveCandidate(BaseModel):
+    address: str
+    candidateId: int

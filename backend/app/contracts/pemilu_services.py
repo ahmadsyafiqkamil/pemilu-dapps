@@ -47,30 +47,52 @@ def get_all_candidates():
     candidate_count = contract.functions.candidateCount().call()
     candidates = []
     
-    # Get the event signature and ensure it has 0x prefix
-    event_signature = "0x" + w3.keccak(text="CandidateAdded(uint256,string,string)").hex().lstrip("0x")
+    # Get the event signature for both add and remove events
+    add_event_signature = "0x" + w3.keccak(text="CandidateAdded(uint256,string,string)").hex().lstrip("0x")
+    remove_event_signature = "0x" + w3.keccak(text="CandidateRemoved(uint256,string)").hex().lstrip("0x")
     
     # Get logs for candidate additions
-    logs = w3.eth.get_logs({
+    add_logs = w3.eth.get_logs({
         'address': contract_address,
-        'topics': [event_signature],
+        'topics': [add_event_signature],
         'fromBlock': 0,
         'toBlock': 'latest'
     })
     
-    # Process each log
-    for log in logs:
+    # Get logs for candidate removals
+    remove_logs = w3.eth.get_logs({
+        'address': contract_address,
+        'topics': [remove_event_signature],
+        'fromBlock': 0,
+        'toBlock': 'latest'
+    })
+    
+    # Create a set of removed candidate IDs
+    removed_candidates = set()
+    for log in remove_logs:
+        decoded_log = contract.events.CandidateRemoved().process_log(log)
+        removed_candidates.add(decoded_log['args']['id'])
+    
+    # Process each add log
+    for log in add_logs:
         # Decode the log
         decoded_log = contract.events.CandidateAdded().process_log(log)
         candidate_id = decoded_log['args']['id']
+        
+        # Skip if this candidate was removed
+        if candidate_id in removed_candidates:
+            continue
+            
         try:
             candidate = contract.functions.candidates(candidate_id).call()
-            candidates.append({
-                "id": candidate[0],  # id
-                "name": candidate[1],  # name
-                "voteCount": candidate[2],  # voteCount
-                "imageCID": candidate[3]  # imageCID
-            })
+            # Additional check to ensure the candidate exists (id should be non-zero)
+            if candidate[0] != 0:  # if id is not 0
+                candidates.append({
+                    "id": candidate[0],  # id
+                    "name": candidate[1],  # name
+                    "voteCount": candidate[2],  # voteCount
+                    "imageCID": candidate[3]  # imageCID
+                })
         except Exception as e:
             print(f"Error getting candidate {candidate_id}: {str(e)}")
             continue
@@ -90,6 +112,14 @@ def get_candidate_details(candidate_id: int):
     except Exception as e:
         print(f"Error getting candidate details for {candidate_id}: {str(e)}")
         return None
+    
+def remove_candidate(user_address: str, candidate_id: int):
+    """Remove a candidate from the contract"""
+    if not is_admin(user_address):
+        raise Exception("Only admins can remove candidates")
+    
+    tx_function = contract.functions.removeCandidate(candidate_id)
+    return build_transact(tx_function, user_address)    
 
 def add_candidate(user_address: str, name: str, imageCID: str):
     if not is_admin(user_address):

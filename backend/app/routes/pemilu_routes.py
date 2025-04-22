@@ -31,6 +31,22 @@ def add_candidate(data: models.Candidate):
 def get_candidate_details(candidate_id: int):
     return pemilu_services.get_candidate_details(candidate_id)
 
+@router.delete("/candidates/{candidate_id}")
+def remove_candidate(data: models.RemoveCandidate):
+    if not Web3.is_address(data.address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        # Verify if the address is an admin
+        if not pemilu_services.is_admin(data.address):
+            raise HTTPException(status_code=403, detail="Only admins can remove candidates")
+        
+        tx = pemilu_services.remove_candidate(user_address=data.address, candidate_id=data.candidateId)
+        return {"message": "Candidate removed successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
 @router.post("/admins")
 def add_admin(owner_address: str = Query(..., description="Contract owner address"), 
               new_admin_address: str = Query(..., description="New admin address")):
