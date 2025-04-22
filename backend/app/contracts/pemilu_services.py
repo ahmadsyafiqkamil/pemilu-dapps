@@ -149,6 +149,11 @@ def build_transact(tx_function, user_address):
 
     return tx
 
-
-
-# add new admin: cast send 0x5FbDB2315678afecb367f032d93F642f64180aa3 "addAdmin(address)" 0xA85E11ed0Cb976B18Ba7F4D10180b635Fe24DEc0 --from 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+def is_voter(address: str) -> bool:
+    """Check if the given address is registered as a voter"""
+    try:
+        voter_data = contract.functions.voters(Web3.to_checksum_address(address)).call()
+        return voter_data[0]  # isRegistered is the first field in Voter struct
+    except Exception as e:
+        print(f"Error checking voter status for {address}: {str(e)}")
+        return False

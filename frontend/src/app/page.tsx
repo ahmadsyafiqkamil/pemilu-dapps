@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 export default function Home() {
   const { isConnected } = useAccount()
   const router = useRouter()
-  const { isAdmin, isVoter, loading } = useAuth()
+  const { isAdmin, isVoter, isUnregistered, loading } = useAuth()
 
   // ⏩ Redirect berdasarkan role dari backend
   useEffect(() => {
@@ -18,11 +18,11 @@ export default function Home() {
         router.push('/admin/dashboard')
       } else if (isVoter) {
         router.push('/voter/dashboard')
-      } else {
-        router.push('/')
+      } else if (isUnregistered) {
+        router.push('/admin/voters/register')
       }
     }
-  }, [isAdmin, isVoter, loading, isConnected, router])
+  }, [isAdmin, isVoter, isUnregistered, loading, isConnected, router])
 
   // Jika belum connect, tampilkan notice
   if (!isConnected) {
@@ -33,7 +33,11 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col gap-2 items-center justify-center text-muted">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      <div>{loading ? "Memeriksa status admin..." : "Mengalihkan..."}</div>
+      <div>
+        {loading 
+          ? "Memeriksa status pengguna..." 
+          : "Mengalihkan..."}
+      </div>
     </div>
   )
 }

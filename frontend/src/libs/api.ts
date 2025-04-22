@@ -46,6 +46,10 @@ interface AddCandidateResponse {
   tx_hash: RawTransaction;
 }
 
+interface VoterResponse {
+  is_voter: boolean
+}
+
 export const api = {
   // Admin related functions
   checkAdminStatus: async (walletAddress: string): Promise<boolean> => {
@@ -200,6 +204,21 @@ export const api = {
     } catch (error) {
       console.error('Error in removeCandidate:', error)
       throw error instanceof Error ? error : new Error('Failed to remove candidate')
+    }
+  },
+  
+  // Voter related functions
+  checkVoterStatus: async (walletAddress: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`${API_URL}/voters/check/${walletAddress}`)
+      if (!response.ok) {
+        throw new Error('Failed to check voter status')
+      }
+      const data: VoterResponse = await response.json()
+      return data.is_voter
+    } catch (error) {
+      console.error('Error in checkVoterStatus:', error)
+      return false
     }
   },
   

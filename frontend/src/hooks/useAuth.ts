@@ -6,7 +6,7 @@ import { api } from '@/libs/api';
 
 interface User {
   address: string;
-  role: 'admin' | 'voter';
+  role: 'admin' | 'voter' | 'unregistered';
 }
 
 export const useAuth = () => {
@@ -21,16 +21,24 @@ export const useAuth = () => {
           // Cek status admin menggunakan API
           const isAdmin = await api.checkAdminStatus(address);
           
-          // Set user data berdasarkan hasil pengecekan API
-          setUser({
-            address,
-            role: isAdmin ? 'admin' : 'voter',
-          });
+          if (isAdmin) {
+            setUser({
+              address,
+              role: 'admin',
+            });
+          } else {
+            // Jika bukan admin, cek apakah terdaftar sebagai voter
+            const isRegistered = await api.checkVoterStatus(address);
+            setUser({
+              address,
+              role: isRegistered ? 'voter' : 'unregistered',
+            });
+          }
         } catch (error) {
-          console.error('Error checking admin status:', error);
+          console.error('Error checking user status:', error);
           setUser({
             address,
-            role: 'voter', // Default ke voter jika terjadi error
+            role: 'unregistered', // Default ke unregistered jika terjadi error
           });
         }
       } else {
@@ -47,6 +55,7 @@ export const useAuth = () => {
     loading,
     isAdmin: user?.role === 'admin',
     isVoter: user?.role === 'voter',
+    isUnregistered: user?.role === 'unregistered',
     isAuthenticated: isConnected && user !== null,
   };
 }; 

@@ -6,7 +6,7 @@ import { VoterNavbar } from './VoterNavbar';
 import { ConnectButton } from '@/components/ui/connectButton';
 
 export const Navbar = () => {
-  const { isAdmin, isVoter, loading, isAuthenticated } = useAuth();
+  const { isAdmin, loading, isAuthenticated } = useAuth();
 
   if (loading) {
     return (
@@ -33,9 +33,5 @@ export const Navbar = () => {
     return <AdminNavbar />;
   }
 
-  if (isVoter) {
-    return <VoterNavbar />;
-  }
-
-  return null;
+  return <VoterNavbar />;
 }; 

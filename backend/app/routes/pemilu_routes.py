@@ -81,3 +81,14 @@ def check_admin(address: str):
         return {"is_admin": is_admin}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/voters/check/{address}")
+def check_voter(address: str):
+    if not Web3.is_address(address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        is_registered = pemilu_services.is_voter(address)
+        return {"is_registered": is_registered}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
