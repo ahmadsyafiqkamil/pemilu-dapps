@@ -279,5 +279,30 @@ export const api = {
     }
   },
 
+  vote: async (walletAddress: string, candidateId: number): Promise<TransactionResponse> => {
+    try {
+      const response = await fetch(`${API_URL}/voters/vote`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address: walletAddress,
+          candidateId: candidateId
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to vote')
+      }
+      
+      return response.json()
+    } catch (error) {
+      console.error('Error voting:', error)
+      throw error instanceof Error ? error : new Error('Error voting')
+    }
+  },
+  
   
 } 

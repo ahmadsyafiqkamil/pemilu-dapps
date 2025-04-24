@@ -167,6 +167,13 @@ def get_all_voters():
     
     return voters
 
+def vote(user_address: str, candidate_id: int):
+    """Vote for a candidate"""
+    tx_function = contract.functions.vote(candidate_id)
+    return build_transact(tx_function, user_address)
+
+
+
 def build_transact(tx_function, user_address):
     gas_limit, gas_params = utils.get_gas_parameters(tx_function, user_address)
     nonce = w3.eth.get_transaction_count(user_address)

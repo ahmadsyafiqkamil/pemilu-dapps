@@ -49,10 +49,31 @@ export default function CandidateDetailPage() {
         setError(null)
 
         try {
-            // TODO: Implement voting logic here
-            // This will be implemented when the backend API is ready
-            toast.success('Vote recorded successfully!')
-            router.push('/voter/dashboard')
+            // Get the transaction from the API
+            const response = await api.vote(address, Number(params.id))
+            const tx = response.tx_hash
+            
+            // Sign and send the transaction
+            const hash = await walletClient.sendTransaction({
+                to: tx.to as `0x${string}`,
+                data: tx.data as `0x${string}`,
+                value: BigInt(tx.value),
+                gas: BigInt(tx.gas),
+                maxFeePerGas: BigInt(tx.maxFeePerGas),
+                maxPriorityFeePerGas: BigInt(tx.maxPriorityFeePerGas),
+                nonce: tx.nonce,
+                type: 'eip1559'
+            })
+            
+            // Wait for transaction to be mined
+            const receipt = await publicClient.waitForTransactionReceipt({ hash })
+            
+            if (receipt.status === 'success') {
+                toast.success('Vote recorded successfully!')
+                router.push('/voter/dashboard')
+            } else {
+                throw new Error('Transaction failed')
+            }
         } catch (err) {
             console.error('Error voting:', err)
             setError(err instanceof Error ? err.message : 'Failed to submit vote')

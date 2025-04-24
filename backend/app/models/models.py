@@ -18,3 +18,8 @@ class RemoveCandidate(BaseModel):
 class RemoveVoter(BaseModel):
     address: str
     voterAddress: str
+
+class Vote(BaseModel):
+    address: str
+    candidateId: int
+

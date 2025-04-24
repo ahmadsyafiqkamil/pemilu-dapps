@@ -34,7 +34,7 @@ export default function AdminDashboard() {
     totalVotes: 0,
   });
   const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [voters, setVoters] = useState<Voter[]>([]);
+  // const [voters, setVoters] = useState<Voter[]>([]);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -51,11 +51,11 @@ export default function AdminDashboard() {
 
         // Fetch voters
         const votersData = await api.getAllVoters();
-        setVoters(votersData);
+        // setVoters(votersData);
 
         // Set stats
         setStats({
-          totalVoters: votersData.length,
+          totalVoters: 0,
           totalCandidates: candidatesData.length,
           totalVotes: candidatesData.reduce((acc, curr) => acc + curr.voteCount, 0),
         });

@@ -119,3 +119,16 @@ def remove_voter(data: models.RemoveVoter):
 @router.get("/voters")
 def get_all_voters():
     return pemilu_services.get_all_voters()
+
+@router.post("/voters/vote")
+def vote(data: models.Vote):
+    if not Web3.is_address(data.address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        tx = pemilu_services.vote(user_address=data.address, candidate_id=data.candidateId)
+        return {"message": "Vote cast successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
