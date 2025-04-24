@@ -76,7 +76,7 @@ export default function RegisterVoter() {
               if (isVoter) {
                 // Only redirect if confirmed as voter
                 setTimeout(() => {
-                  router.push('/voter/dashboard')
+                  router.push('/voter/vote')
                 }, 1500) // Wait 1.5 seconds before redirecting to show the success message
                 return receipt
               } else {

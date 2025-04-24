@@ -13,18 +13,12 @@ export const VoterNavbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/voter/home" className="text-xl font-bold">
+              <Link href="/voter/vote" className="text-xl font-bold">
                 E-Voting
               </Link>
             </div>
             {isVoter && (
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link
-                  href="/voter/home"
-                  className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-indigo-500"
-                >
-                  Home
-                </Link>
                 <Link
                   href="/voter/vote"
                   className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-indigo-500"

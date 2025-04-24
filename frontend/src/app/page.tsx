@@ -17,7 +17,7 @@ export default function Home() {
       if (isAdmin) {
         router.push('/admin/dashboard')
       } else if (isVoter) {
-        router.push('/voter/dashboard')
+        router.push('/voter/vote')
       } else if (isUnregistered) {
         router.push('/voter/register')
       }
