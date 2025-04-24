@@ -151,6 +151,21 @@ def remove_voter(user_address: str, voter_address: str):
     tx_function = contract.functions.removeVoter(voter_address)
     return build_transact(tx_function, user_address)
 
+def get_all_voters():
+    """Get all voters from the contract"""
+    voter_count = contract.functions.voterCount().call()
+    voters = []
+    
+    for i in range(voter_count):
+        voter_data = contract.functions.voters(i).call()
+        voters.append({
+            "id": i,
+            "address": voter_data[0],
+            "isRegistered": voter_data[1],
+            "hasVoted": voter_data[2]
+        })
+    
+    return voters
 
 def build_transact(tx_function, user_address):
     gas_limit, gas_params = utils.get_gas_parameters(tx_function, user_address)

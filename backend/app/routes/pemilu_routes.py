@@ -115,3 +115,7 @@ def remove_voter(data: models.RemoveVoter):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+
+@router.get("/voters")
+def get_all_voters():
+    return pemilu_services.get_all_voters()

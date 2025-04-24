@@ -29,6 +29,8 @@ contract Pemilu is Ownable {
     // Data kandidat dan pemilih
     mapping(uint => Candidate) public candidates;
     mapping(address => Voter) public voters;
+    // Array to track all registered voter addresses
+    address[] private registeredVoters;
     // Mapping untuk menyimpan daftar admin
     mapping(address => bool) public admins;
 
@@ -101,6 +103,7 @@ contract Pemilu is Ownable {
     function registerAsVoter() public {
         require(!voters[msg.sender].isRegistered, "Sudah terdaftar");
         voters[msg.sender].isRegistered = true;
+        registeredVoters.push(msg.sender);
         emit VoterRegistered(msg.sender);
     }
 
@@ -194,5 +197,16 @@ contract Pemilu is Ownable {
         require(candidates[_candidateId].id != 0, "Kandidat tidak ditemukan");
         Candidate memory candidate = candidates[_candidateId];
         return (candidate.id, candidate.name, candidate.voteCount, candidate.imageCID);
+    }
+
+    // Function to get all registered voters
+    function getAllVoters() public view returns (address[] memory) {
+        return registeredVoters;
+    }
+
+    // Function to get voter details
+    function getVoterDetails(address _voterAddress) public view returns (bool isRegistered, bool hasVoted, uint voteCandidateId) {
+        Voter memory voter = voters[_voterAddress];
+        return (voter.isRegistered, voter.hasVoted, voter.voteCandidateId);
     }
 }

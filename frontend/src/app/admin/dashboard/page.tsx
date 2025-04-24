@@ -18,6 +18,13 @@ interface Candidate {
   voteCount: number;
 }
 
+interface Voter {
+  id: number;
+  address: string;
+  isRegistered: boolean;
+  hasVoted: boolean;
+}
+
 export default function AdminDashboard() {
   const { isAdmin, loading } = useAuth();
   const router = useRouter();
@@ -27,6 +34,7 @@ export default function AdminDashboard() {
     totalVotes: 0,
   });
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [voters, setVoters] = useState<Voter[]>([]);
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -41,9 +49,13 @@ export default function AdminDashboard() {
         const candidatesData = await api.getAllCandidates();
         setCandidates(candidatesData);
 
+        // Fetch voters
+        const votersData = await api.getAllVoters();
+        setVoters(votersData);
+
         // Set stats
         setStats({
-          totalVoters: 0, // You'll need to implement this API
+          totalVoters: votersData.length,
           totalCandidates: candidatesData.length,
           totalVotes: candidatesData.reduce((acc, curr) => acc + curr.voteCount, 0),
         });

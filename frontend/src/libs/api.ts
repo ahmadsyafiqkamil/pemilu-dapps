@@ -50,6 +50,13 @@ interface VoterResponse {
   is_registered: boolean
 }
 
+interface Voter {
+  id: number
+  address: string
+  isRegistered: boolean
+  hasVoted: boolean
+}
+
 export const api = {
   // Admin related functions
   checkAdminStatus: async (walletAddress: string): Promise<boolean> => {
@@ -239,6 +246,36 @@ export const api = {
     } catch (error) {
       console.error('Error registering voter:', error)
       throw error instanceof Error ? error : new Error('Error registering voter')
+    }
+  },
+
+  getAllVoters: async (): Promise<Voter[]> => {
+    try {
+      const response = await fetch(`${API_URL}/voters`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch voters')
+      }
+      const voterAddresses: string[] = await response.json()
+      
+      // Get details for each voter
+      const voters: Voter[] = []
+      for (const address of voterAddresses) {
+        const voterResponse = await fetch(`${API_URL}/voters/${address}`)
+        if (voterResponse.ok) {
+          const voterData = await voterResponse.json()
+          voters.push({
+            id: voters.length + 1,
+            address: address,
+            isRegistered: voterData.isRegistered,
+            hasVoted: voterData.hasVoted
+          })
+        }
+      }
+      
+      return voters
+    } catch (error) {
+      console.error('Error fetching voters:', error)
+      throw error instanceof Error ? error : new Error('Failed to fetch voters')
     }
   },
 
