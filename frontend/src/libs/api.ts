@@ -47,7 +47,7 @@ interface AddCandidateResponse {
 }
 
 interface VoterResponse {
-  is_voter: boolean
+  is_registered: boolean
 }
 
 export const api = {
@@ -212,26 +212,32 @@ export const api = {
     try {
       const response = await fetch(`${API_URL}/voters/check/${walletAddress}`)
       if (!response.ok) {
-        throw new Error('Failed to check voter status')
+        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(errorData.detail || `Failed to check voter status: ${response.status} ${response.statusText}`);
       }
       const data: VoterResponse = await response.json()
-      return data.is_voter
+      console.log('Voter status response:', data)
+      return data.is_registered
     } catch (error) {
-      console.error('Error in checkVoterStatus:', error)
+      console.error('Error checking voter status:', error)
       return false
     }
   },
   
   registerVoter: async (walletAddress: string): Promise<TransactionResponse> => {
     try {
-      const registerResponse = await fetch(`${API_URL}/voters/register?address=${walletAddress}`, {
+      const response = await fetch(`${API_URL}/voters/register?address=${walletAddress}`, {
         method: 'POST',
       })
-      if (!registerResponse.ok) {
-        throw new Error('Failed to register voter')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(errorData.detail || `Failed to register voter: ${response.status} ${response.statusText}`);
       }
-      return registerResponse.json()
+      const data = await response.json()
+      console.log('Register voter response:', data)
+      return data
     } catch (error) {
+      console.error('Error registering voter:', error)
       throw error instanceof Error ? error : new Error('Error registering voter')
     }
   },

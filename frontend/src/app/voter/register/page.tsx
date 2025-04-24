@@ -63,19 +63,32 @@ export default function RegisterVoter() {
             if (receipt.status === 'success') {
               console.log('Transaction confirmed:', receipt)
               
+              // Wait for a few blocks to ensure transaction is processed
+              await new Promise(resolve => setTimeout(resolve, 5000))
+              
               // Refresh auth status after successful registration
               await refreshAuth()
               
-              // Redirect to voter dashboard after successful registration
-              setTimeout(() => {
-                router.push('/voter/dashboard')
-              }, 1500) // Wait 1.5 seconds before redirecting to show the success message
+              // Check if user is now registered as voter
+              const isVoter = await api.checkVoterStatus(address)
+              console.log('Voter status after registration:', isVoter)
               
-              return receipt
+              if (isVoter) {
+                // Only redirect if confirmed as voter
+                setTimeout(() => {
+                  router.push('/voter/dashboard')
+                }, 1500) // Wait 1.5 seconds before redirecting to show the success message
+                return receipt
+              } else {
+                console.error('Voter registration failed - status check returned false')
+                throw new Error('Registration transaction succeeded but voter status not updated. Please try again.')
+              }
             } else {
+              console.error('Transaction failed:', receipt)
               throw new Error('Transaction failed')
             }
           } catch (error) {
+            console.error('Error in registration process:', error)
             throw error
           }
         })(),

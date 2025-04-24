@@ -19,7 +19,7 @@ export default function Home() {
       } else if (isVoter) {
         router.push('/voter/dashboard')
       } else if (isUnregistered) {
-        router.push('/admin/voters/register')
+        router.push('/voter/register')
       }
     }
   }, [isAdmin, isVoter, isUnregistered, loading, isConnected, router])
