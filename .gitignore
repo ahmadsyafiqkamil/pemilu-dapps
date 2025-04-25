@@ -332,4 +332,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+foundry
+
 # End of https://www.toptal.com/developers/gitignore/api/solidity,python,nextjs
