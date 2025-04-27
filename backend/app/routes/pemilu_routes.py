@@ -131,4 +131,7 @@ def vote(data: models.Vote):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/voters/count")
+def get_voter_count():
+    return pemilu_services.get_voter_count()
 

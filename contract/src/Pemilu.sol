@@ -209,4 +209,9 @@ contract Pemilu is Ownable {
         Voter memory voter = voters[_voterAddress];
         return (voter.isRegistered, voter.hasVoted, voter.voteCandidateId);
     }
+
+    // Function to get total number of registered voters
+    function getTotalRegisteredVoters() public view returns (uint) {
+        return registeredVoters.length;
+    }
 }

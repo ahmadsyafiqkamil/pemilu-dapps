@@ -26,13 +26,48 @@ def is_admin(address: str) -> bool:
     """Check if the given address is an admin"""
     return contract.functions.isAdmin(Web3.to_checksum_address(address)).call()
 
+# def add_admin(owner_address: str, new_admin_address: str):
+#     """Add a new admin to the contract"""
+#     if not is_contract_owner(owner_address):
+#         raise Exception("Only contract owner can add new admins")
+    
+#     tx_function = contract.functions.addAdmin(Web3.to_checksum_address(new_admin_address))
+#     return build_transact(tx_function, owner_address)
+
 def add_admin(owner_address: str, new_admin_address: str):
     """Add a new admin to the contract"""
     if not is_contract_owner(owner_address):
         raise Exception("Only contract owner can add new admins")
     
+    # Get the owner's private key from environment variable
+    owner_private_key = os.getenv("PRIVATE_KEY_METAMASK")
+    if not owner_private_key:
+        raise Exception("OWNER_PRIVATE_KEY not found in environment variables")
+    
+    # Build the transaction
     tx_function = contract.functions.addAdmin(Web3.to_checksum_address(new_admin_address))
-    return build_transact(tx_function, owner_address)
+    gas_limit, gas_params = utils.get_gas_parameters(tx_function, owner_address)
+    nonce = w3.eth.get_transaction_count(owner_address)
+    
+    # Build the transaction
+    tx = tx_function.build_transaction({
+        "from": owner_address,
+        "nonce": nonce,
+        "gas": gas_limit,
+        **gas_params
+    })
+    
+    # Sign the transaction
+    signed_tx = w3.eth.account.sign_transaction(tx, owner_private_key)
+    
+    # Send the transaction
+    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+    
+    # Wait for transaction receipt
+    receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+    
+    return receipt
+    
 
 def remove_admin(owner_address: str, admin_address: str):
     """Remove an admin from the contract"""
@@ -151,21 +186,16 @@ def remove_voter(user_address: str, voter_address: str):
     tx_function = contract.functions.removeVoter(voter_address)
     return build_transact(tx_function, user_address)
 
+def get_voter_count():
+    """Get the number of registered voters"""
+    return contract.functions.getTotalRegisteredVoters().call()
+
+
 def get_all_voters():
     """Get all voters from the contract"""
-    voter_count = contract.functions.voterCount().call()
-    voters = []
-    
-    for i in range(voter_count):
-        voter_data = contract.functions.voters(i).call()
-        voters.append({
-            "id": i,
-            "address": voter_data[0],
-            "isRegistered": voter_data[1],
-            "hasVoted": voter_data[2]
-        })
-    
+    voters = contract.functions.getAllVoters().call()
     return voters
+
 
 def vote(user_address: str, candidate_id: int):
     """Vote for a candidate"""

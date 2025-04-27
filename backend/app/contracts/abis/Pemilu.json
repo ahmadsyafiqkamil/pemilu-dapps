@@ -116,6 +116,19 @@
   },
   {
     "type": "function",
+    "name": "getAllVoters",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getCandidateDetails",
     "inputs": [
       {
@@ -150,6 +163,19 @@
   },
   {
     "type": "function",
+    "name": "getTotalRegisteredVoters",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getVoteCount",
     "inputs": [
       {
@@ -161,6 +187,35 @@
     "outputs": [
       {
         "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getVoterDetails",
+    "inputs": [
+      {
+        "name": "_voterAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "isRegistered",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "hasVoted",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "voteCandidateId",
         "type": "uint256",
         "internalType": "uint256"
       }
