@@ -64,7 +64,7 @@ contract Pemilu is Ownable {
     }
 
     // Fungsi untuk menambah admin (hanya owner yang bisa)
-    function addAdmin(address _newAdmin) public onlyOwner {
+    function addAdmin(address _newAdmin) public onlyAdmin {
         require(_newAdmin != address(0), "Invalid address");
         require(!admins[_newAdmin], "Already an admin");
         admins[_newAdmin] = true;
@@ -72,7 +72,7 @@ contract Pemilu is Ownable {
     }
 
     // Fungsi untuk menghapus admin (hanya owner yang bisa)
-    function removeAdmin(address _admin) public onlyOwner {
+    function removeAdmin(address _admin) public onlyAdmin {
         require(_admin != owner(), "Cannot remove owner from admin");
         require(admins[_admin], "Not an admin");
         admins[_admin] = false;
@@ -121,11 +121,12 @@ contract Pemilu is Ownable {
         emit Voted(msg.sender, _candidateId);
     }
 
-    function getVoteCount(uint _candidateId) public view onlyOwner returns (uint) {
-    require(_candidateId > 0 && _candidateId <= candidateCount, "Kandidat tidak valid");
-    return candidates[_candidateId].voteCount;
-}
-    function setVotingPeriod(uint _startTime, uint _endTime) public onlyOwner {
+    function getVoteCount(uint _candidateId) public view onlyAdmin returns (uint) {
+        require(_candidateId > 0 && _candidateId <= candidateCount, "Kandidat tidak valid");
+        return candidates[_candidateId].voteCount;
+    }
+
+    function setVotingPeriod(uint _startTime, uint _endTime) public onlyAdmin {
         require(_startTime < _endTime, "Waktu mulai harus lebih awal dari waktu berakhir");
         require(block.timestamp < _startTime, "Waktu mulai tidak boleh sudah berlalu");
         startTime = _startTime;
@@ -214,4 +215,8 @@ contract Pemilu is Ownable {
     function getTotalRegisteredVoters() public view returns (uint) {
         return registeredVoters.length;
     }
+
+    // function getVotingPeriod() public pure returns (uint startTime, uint endTime) {
+    //     return (startTime, endTime);
+    // }
 }
