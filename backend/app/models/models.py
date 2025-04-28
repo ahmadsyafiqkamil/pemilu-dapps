@@ -23,3 +23,7 @@ class Vote(BaseModel):
     address: str
     candidateId: int
 
+class SetVotingPeriod(BaseModel):
+    address: str
+    startTime: int
+    endTime: int

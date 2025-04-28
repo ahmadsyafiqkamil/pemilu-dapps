@@ -202,7 +202,29 @@ def vote(user_address: str, candidate_id: int):
     tx_function = contract.functions.vote(candidate_id)
     return build_transact(tx_function, user_address)
 
+def set_voting_period(user_address: str, start_time: int, end_time: int):
+    """Set the voting period"""
+    tx_function = contract.functions.setVotingPeriod(start_time, end_time)
+    return build_transact(tx_function, user_address)
 
+def get_voting_period():
+    """Get the current voting period status"""
+    try:
+        start_time = contract.functions.startTime().call()
+        end_time = contract.functions.endTime().call()
+        current_time = w3.eth.get_block('latest').timestamp
+        
+        return {
+            "startTime": start_time,
+            "endTime": end_time,
+            "currentTime": current_time,
+            "isSet": start_time != 0 and end_time != 0,
+            "isActive": start_time != 0 and end_time != 0 and current_time >= start_time and current_time <= end_time,
+            "hasEnded": start_time != 0 and end_time != 0 and current_time > end_time
+        }
+    except Exception as e:
+        print(f"Error getting voting period: {str(e)}")
+        return None
 
 def build_transact(tx_function, user_address):
     gas_limit, gas_params = utils.get_gas_parameters(tx_function, user_address)

@@ -5,6 +5,8 @@ import { api } from '@/libs/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
+import { SetVotingPeriodDialog } from '@/components/SetVotingPeriodDialog';
+import { useAccount } from 'wagmi';
 
 interface DashboardStats {
   totalVoters: number;
@@ -25,8 +27,18 @@ interface Voter {
   hasVoted: boolean;
 }
 
+interface VotingPeriod {
+  startTime: number;
+  endTime: number;
+  currentTime: number;
+  isSet: boolean;
+  isActive: boolean;
+  hasEnded: boolean;
+}
+
 export default function AdminDashboard() {
   const { isAdmin, loading } = useAuth();
+  const { address } = useAccount();
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats>({
     totalVoters: 0,
@@ -35,6 +47,32 @@ export default function AdminDashboard() {
   });
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [voters, setVoters] = useState<number>(0);
+  const [votingPeriod, setVotingPeriod] = useState<VotingPeriod | null>(null);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch candidates
+      const candidatesData = await api.getAllCandidates();
+      setCandidates(candidatesData);
+
+      // Fetch voters
+      const votersData = await api.getVoterCount(); 
+      setVoters(votersData);
+
+      // Fetch voting period
+      const votingPeriodData = await api.getVotingPeriod();
+      setVotingPeriod(votingPeriodData);
+
+      // Set stats
+      setStats({
+        totalVoters: votersData,
+        totalCandidates: candidatesData.length,
+        totalVotes: candidatesData.reduce((acc, curr) => acc + curr.voteCount, 0),
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -43,27 +81,6 @@ export default function AdminDashboard() {
   }, [isAdmin, loading, router]);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        // Fetch candidates
-        const candidatesData = await api.getAllCandidates();
-        setCandidates(candidatesData);
-
-        // Fetch voters
-        const votersData = await api.getVoterCount(); 
-        setVoters(votersData);
-
-        // Set stats
-        setStats({
-          totalVoters: votersData,
-          totalCandidates: candidatesData.length,
-          totalVotes: candidatesData.reduce((acc, curr) => acc + curr.voteCount, 0),
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      }
-    };
-
     fetchDashboardData();
   }, []);
 
@@ -174,15 +191,46 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">Status</span>
-              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                Active
+              <span className={`px-2 py-1 rounded-full text-sm ${
+                !votingPeriod?.isSet 
+                  ? 'bg-yellow-100 text-yellow-800'
+                  : votingPeriod.isActive 
+                    ? 'bg-green-100 text-green-800'
+                    : votingPeriod.hasEnded 
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-gray-100 text-gray-800'
+              }`}>
+                {!votingPeriod?.isSet 
+                  ? 'Not Set'
+                  : votingPeriod.isActive 
+                    ? 'Active'
+                    : votingPeriod.hasEnded 
+                      ? 'Ended'
+                      : 'Pending'}
               </span>
             </div>
-            <button
-              className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-            >
-              End Election
-            </button>
+            {votingPeriod?.isSet && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Start Time</span>
+                  <span className="text-sm text-gray-900">
+                    {new Date(votingPeriod.startTime * 1000).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">End Time</span>
+                  <span className="text-sm text-gray-900">
+                    {new Date(votingPeriod.endTime * 1000).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
+            {address && (
+              <SetVotingPeriodDialog 
+                walletAddress={address} 
+                onSuccess={fetchDashboardData}
+              />
+            )}
           </div>
         </Card>
       </div>

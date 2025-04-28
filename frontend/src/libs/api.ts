@@ -57,6 +57,15 @@ interface Voter {
   hasVoted: boolean
 }
 
+interface VotingPeriodResponse {
+  startTime: number;
+  endTime: number;
+  currentTime: number;
+  isSet: boolean;
+  isActive: boolean;
+  hasEnded: boolean;
+}
+
 export const api = {
   // Admin related functions
   checkAdminStatus: async (walletAddress: string): Promise<boolean> => {
@@ -319,5 +328,43 @@ export const api = {
     }
   },
   
+  setVotingPeriod: async (walletAddress: string, startTime: number, endTime: number): Promise<TransactionResponse> => {
+    try {
+      const response = await fetch(`${API_URL}/voters/set-voting-period`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address: walletAddress,
+          startTime: startTime,
+          endTime: endTime
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to set voting period')
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error('Error setting voting period:', error)
+      throw error instanceof Error ? error : new Error('Error setting voting period')
+    }
+  },
+
+  getVotingPeriod: async (): Promise<VotingPeriodResponse> => {
+    try {
+      const response = await fetch(`${API_URL}/voting-period`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch voting period')
+      }
+      return response.json()
+    } catch (error) {
+      console.error('Error fetching voting period:', error)
+      throw error instanceof Error ? error : new Error('Failed to fetch voting period')
+    }
+  },
   
 } 

@@ -64,7 +64,7 @@ contract Pemilu is Ownable {
     }
 
     // Fungsi untuk menambah admin (hanya owner yang bisa)
-    function addAdmin(address _newAdmin) public onlyAdmin {
+    function addAdmin(address _newAdmin) public onlyOwner {
         require(_newAdmin != address(0), "Invalid address");
         require(!admins[_newAdmin], "Already an admin");
         admins[_newAdmin] = true;
@@ -72,7 +72,7 @@ contract Pemilu is Ownable {
     }
 
     // Fungsi untuk menghapus admin (hanya owner yang bisa)
-    function removeAdmin(address _admin) public onlyAdmin {
+    function removeAdmin(address _admin) public onlyAdmin() {
         require(_admin != owner(), "Cannot remove owner from admin");
         require(admins[_admin], "Not an admin");
         admins[_admin] = false;
@@ -215,8 +215,8 @@ contract Pemilu is Ownable {
     function getTotalRegisteredVoters() public view returns (uint) {
         return registeredVoters.length;
     }
-
-    // function getVotingPeriod() public pure returns (uint startTime, uint endTime) {
-    //     return (startTime, endTime);
-    // }
+    
+    function getVotingPeriod() public pure returns (uint startTime, uint endTime) {
+        return (startTime, endTime);
+    }
 }
