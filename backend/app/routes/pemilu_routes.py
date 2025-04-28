@@ -139,9 +139,13 @@ def get_voter_count():
 def set_voting_period(data: models.SetVotingPeriod):
     if not Web3.is_address(data.address):
         raise HTTPException(status_code=400, detail="Invalid Ethereum address")
-    
-    return pemilu_services.set_voting_period(user_address=data.address, start_time=data.startTime, end_time=data.endTime)
 
+    try:
+        tx = pemilu_services.set_voting_period(user_address=data.address, start_time=data.startTime, end_time=data.endTime)
+        return {"message": "Voting period set successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
 @router.get("/voting-period")
 def get_voting_period():
     """Get the current voting period status"""

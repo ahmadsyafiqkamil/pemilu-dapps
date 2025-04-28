@@ -1,69 +1,21 @@
+import {
+  Candidate,
+  AdminResponse,
+  TransactionResponse,
+  PinataResponse,
+  RawTransaction,
+  AddCandidateResponse,
+  VoterResponse,
+  Voter,
+  VotingPeriodResponse
+} from '@/types/api';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const PINATA_API_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS'
 const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT
 
 if (!PINATA_JWT) {
   throw new Error('Missing Pinata JWT - please check your environment variables')
-}
-
-export interface Candidate {
-  id: number
-  name: string
-  voteCount: number
-  imageCID: string
-}
-
-interface AdminResponse {
-  is_admin: boolean
-}
-
-interface TransactionResponse {
-  message: string;
-  tx_hash: RawTransaction;
-}
-
-interface PinataResponse {
-  IpfsHash: string
-  PinSize: number
-  Timestamp: string
-}
-
-interface RawTransaction {
-  value: number;
-  from: string;
-  nonce: number;
-  gas: number;
-  maxFeePerGas: number;
-  maxPriorityFeePerGas: number;
-  type: number;
-  chainId: number;
-  to: string;
-  data: string;
-}
-
-interface AddCandidateResponse {
-  message: string;
-  tx_hash: RawTransaction;
-}
-
-interface VoterResponse {
-  is_registered: boolean
-}
-
-interface Voter {
-  id: number
-  address: string
-  isRegistered: boolean
-  hasVoted: boolean
-}
-
-interface VotingPeriodResponse {
-  startTime: number;
-  endTime: number;
-  currentTime: number;
-  isSet: boolean;
-  isActive: boolean;
-  hasEnded: boolean;
 }
 
 export const api = {
@@ -347,7 +299,30 @@ export const api = {
         throw new Error(errorData.detail || 'Failed to set voting period')
       }
 
-      return response.json()
+      const data = await response.json()
+      console.log('Set voting period response:', data)
+      console.log('Response type:', typeof data)
+      console.log('Response keys:', Object.keys(data))
+      
+      // Check if the response has the expected format
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid response format from backend')
+      }
+
+      // If the response is already in the correct format, return it
+      if (data.tx_hash) {
+        return data
+      }
+
+      // If the response is in a different format, try to transform it
+      if (data.tx) {
+        return {
+          message: data.message || 'Voting period set successfully',
+          tx_hash: data.tx
+        }
+      }
+
+      throw new Error('Invalid response format from backend')
     } catch (error) {
       console.error('Error setting voting period:', error)
       throw error instanceof Error ? error : new Error('Error setting voting period')

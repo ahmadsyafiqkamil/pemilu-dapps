@@ -7,33 +7,12 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { SetVotingPeriodDialog } from '@/components/SetVotingPeriodDialog';
 import { useAccount } from 'wagmi';
+import { Candidate, Voter, VotingPeriodResponse } from '@/types/api';
 
 interface DashboardStats {
   totalVoters: number;
   totalCandidates: number;
   totalVotes: number;
-}
-
-interface Candidate {
-  id: number;
-  name: string;
-  voteCount: number;
-}
-
-interface Voter {
-  id: number;
-  address: string;
-  isRegistered: boolean;
-  hasVoted: boolean;
-}
-
-interface VotingPeriod {
-  startTime: number;
-  endTime: number;
-  currentTime: number;
-  isSet: boolean;
-  isActive: boolean;
-  hasEnded: boolean;
 }
 
 export default function AdminDashboard() {
@@ -47,7 +26,7 @@ export default function AdminDashboard() {
   });
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [voters, setVoters] = useState<number>(0);
-  const [votingPeriod, setVotingPeriod] = useState<VotingPeriod | null>(null);
+  const [votingPeriod, setVotingPeriod] = useState<VotingPeriodResponse | null>(null);
 
   const fetchDashboardData = async () => {
     try {
@@ -61,6 +40,7 @@ export default function AdminDashboard() {
 
       // Fetch voting period
       const votingPeriodData = await api.getVotingPeriod();
+      console.log('Voting period data:', votingPeriodData);
       setVotingPeriod(votingPeriodData);
 
       // Set stats

@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { api } from '@/libs/api'
 import { toast } from 'sonner'
+import { usePublicClient, useWalletClient } from 'wagmi'
+import { useAccount } from 'wagmi'
 
 interface SetVotingPeriodDialogProps {
   walletAddress: string
@@ -26,10 +28,19 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
   const [startTime, setStartTime] = useState('')
   const [endTime, setEndTime] = useState('')
   const [loading, setLoading] = useState(false)
+  const { address } = useAccount()
+  const { data: walletClient } = useWalletClient()
+  const publicClient = usePublicClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+
+    if (!address || !walletClient || !publicClient) {
+      toast.error('Please connect your wallet first')
+      setLoading(false)
+      return
+    }
 
     try {
       // Convert string dates to timestamps
@@ -39,21 +50,77 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
       // Validate timestamps
       if (startTimestamp >= endTimestamp) {
         toast.error("Start time must be before end time")
+        setLoading(false)
         return
       }
 
       if (startTimestamp < Math.floor(Date.now() / 1000)) {
         toast.error("Start time must be in the future")
+        setLoading(false)
+        return
+      }
+
+      // Validate wallet address
+      if (!walletAddress || !walletAddress.startsWith('0x')) {
+        toast.error("Invalid wallet address")
+        setLoading(false)
         return
       }
 
       const response = await api.setVotingPeriod(walletAddress, startTimestamp, endTimestamp)
+      console.log('Backend response:', response)
+      console.log('Response type:', typeof response)
+      console.log('Response keys:', Object.keys(response))
       
-      toast.success("Voting period has been set successfully")
+      
+      const { tx_hash: tx } = response
+      console.log('Transaction data:', tx)
+      
+      // Show loading toast while waiting for signature
+      toast.loading('Waiting for signature...')
+      
+      const hash = await walletClient.sendTransaction({
+        to: tx.to as `0x${string}`,
+        data: tx.data as `0x${string}`,
+        value: BigInt(tx.value),
+        type: (tx.type as unknown) as 'eip1559',
+        maxFeePerGas: BigInt(tx.maxFeePerGas),
+        maxPriorityFeePerGas: BigInt(tx.maxPriorityFeePerGas),
+        gas: BigInt(tx.gas),
+        chainId: tx.chainId,
+      })
 
-      setOpen(false)
-      onSuccess?.()
+      // Dismiss the signature waiting toast
+      toast.dismiss()
+
+      // Wait for transaction confirmation
+      await toast.promise(
+        (async () => {
+          try {
+            const receipt = await publicClient.waitForTransactionReceipt({ hash })
+            console.log('Transaction receipt:', receipt)
+            
+            if (receipt.status === 'success') {
+              setOpen(false)
+              onSuccess?.()
+              return receipt
+            } else {
+              throw new Error('Transaction failed')
+            }
+          } catch (error) {
+            console.error('Transaction error:', error)
+            throw error
+          }
+        })(),
+        {
+          loading: 'Processing transaction...',
+          success: (receipt) => `Voting period has been set successfully! Block: ${receipt.blockNumber}`,
+          error: (err) => `Failed to set voting period: ${err instanceof Error ? err.message : 'Unknown error'}`
+        }
+      )
+
     } catch (error) {
+      console.error('Error details:', error)
       toast.error(error instanceof Error ? error.message : "Failed to set voting period")
     } finally {
       setLoading(false)
