@@ -303,6 +303,21 @@ export const api = {
       throw error instanceof Error ? error : new Error('Error voting')
     }
   },
+
+  getVoterCount: async (): Promise<number> => {
+    try {
+      const response = await fetch(`${API_URL}/voters/count`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch votes count')
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error fetching voter count:', error)
+      throw error instanceof Error ? error : new Error('Failed to fetch voter count')
+    }
+  },
   
   
 } 
