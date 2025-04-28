@@ -66,14 +66,23 @@ export default function CandidateDetailPage() {
             })
             
             // Wait for transaction to be mined
-            const receipt = await publicClient.waitForTransactionReceipt({ hash })
-            
-            if (receipt.status === 'success') {
-                toast.success('Vote recorded successfully!')
-                router.push('/voter/dashboard')
-            } else {
-                throw new Error('Transaction failed')
-            }
+            toast.promise(
+                (async () => {
+                    const receipt = await publicClient.waitForTransactionReceipt({ hash })
+                    if (receipt.status === 'success') {
+                        toast.success('Vote recorded successfully!')
+                        router.push('/voter/vote')
+                    } else {
+                        throw new Error('Transaction failed')
+                    }
+                    return receipt
+                })(),
+                {
+                    loading: 'Processing transaction...',
+                    success: 'Transaction confirmed!',
+                    error: 'Transaction failed'
+                }
+            )
         } catch (err) {
             console.error('Error voting:', err)
             setError(err instanceof Error ? err.message : 'Failed to submit vote')
