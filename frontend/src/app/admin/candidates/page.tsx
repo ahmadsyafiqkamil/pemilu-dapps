@@ -101,8 +101,10 @@ export default function CandidatePage() {
           try {
             const receipt = await publicClient.waitForTransactionReceipt({ hash })
             if (receipt.status === 'success') {
-              console.log('Transaction confirmed:', receipt)
-              console.log('Block number:', receipt.blockNumber)
+              // console.log('Transaction confirmed:', receipt)
+              // console.log('Block number:', receipt.blockNumber)
+              toast.success('Kandidat berhasil ditambahkan!')
+              
               loadCandidates() // Refresh the candidates list
               return receipt
             } else {
