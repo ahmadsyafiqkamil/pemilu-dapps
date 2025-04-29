@@ -157,96 +157,72 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
     return new Date(timestamp * 1000).toLocaleString()
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-600">Voting Period</span>
-        <span className={`px-2 py-1 rounded-full text-sm ${
-          !votingPeriodStatus.isSet 
-            ? 'bg-yellow-100 text-yellow-800'
-            : votingPeriodStatus.isActive 
-              ? 'bg-green-100 text-green-800'
-              : votingPeriodStatus.hasEnded 
-                ? 'bg-red-100 text-red-800'
-                : 'bg-gray-100 text-gray-800'
-        }`}>
-          {!votingPeriodStatus.isSet 
-            ? 'Not Set'
-            : votingPeriodStatus.isActive 
-              ? 'Active'
-              : votingPeriodStatus.hasEnded 
-                ? 'Ended'
-                : 'Pending'}
-        </span>
+  if (votingPeriodStatus.isSet) {
+    return (
+      <div className="space-y-2">
+        <Button variant="outline" disabled>
+          {votingPeriodStatus.isActive 
+            ? "Voting Period Active" 
+            : votingPeriodStatus.hasEnded 
+              ? "Voting Period Ended" 
+              : "Voting Period Set"}
+        </Button>
+        {/* <div className="text-sm text-gray-500">
+          <p>Start: {formatDate(votingPeriodStatus.startTime)}</p>
+          <p>End: {formatDate(votingPeriodStatus.endTime)}</p>
+        </div> */}
       </div>
-      
-      {votingPeriodStatus.isSet && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Start Time</span>
-            <span className="text-sm text-gray-900">
-              {formatDate(votingPeriodStatus.startTime)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">End Time</span>
-            <span className="text-sm text-gray-900">
-              {formatDate(votingPeriodStatus.endTime)}
-            </span>
-          </div>
-        </div>
-      )}
+    )
+  }
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button variant="outline" disabled={votingPeriodStatus.isActive}>
-            {votingPeriodStatus.isSet ? "Change Voting Period" : "Set Voting Period"}
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Set Voting Period</DialogTitle>
-            <DialogDescription>
-              Set the start and end time for the voting period. Make sure to set times in the future.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="startTime" className="text-right">
-                  Start Time
-                </Label>
-                <Input
-                  id="startTime"
-                  type="datetime-local"
-                  className="col-span-3"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="endTime" className="text-right">
-                  End Time
-                </Label>
-                <Input
-                  id="endTime"
-                  type="datetime-local"
-                  className="col-span-3"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  required
-                />
-              </div>
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">Set Voting Period</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Set Voting Period</DialogTitle>
+          <DialogDescription>
+            Set the start and end time for the voting period. Make sure to set times in the future.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="startTime" className="text-right">
+                Start Time
+              </Label>
+              <Input
+                id="startTime"
+                type="datetime-local"
+                className="col-span-3"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+              />
             </div>
-            <DialogFooter>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Setting..." : "Set Period"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="endTime" className="text-right">
+                End Time
+              </Label>
+              <Input
+                id="endTime"
+                type="datetime-local"
+                className="col-span-3"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Setting..." : "Set Period"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 } 
