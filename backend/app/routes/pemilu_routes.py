@@ -94,7 +94,7 @@ def remove_candidate(data: models.RemoveCandidate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/candidates/count")
+@router.get("/candidates_count")
 def get_candidate_count():
     return pemilu_services.get_candidate_count()
 
@@ -165,7 +165,7 @@ def vote(data: models.Vote):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/voters/count")
+@router.get("/voters_count")
 def get_voter_count():
     return pemilu_services.get_voter_count()
 

@@ -34,9 +34,13 @@ export default function AdminDashboard() {
       const candidatesData = await api.getAllCandidates();
       setCandidates(candidatesData);
 
-      // Fetch voters
-      const votersData = await api.getVoterCount(); 
-      setVoters(votersData);
+      // Fetch voters count
+      // const votersData = await api.getVoterCount(); 
+      // setVoters(votersData);
+
+      // Fetch candidate count
+      const candidateCount = await api.getCandidateCount();
+      const votersCount = await api.getVoterCount();
 
       // Fetch voting period
       const votingPeriodData = await api.getVotingPeriod();
@@ -45,8 +49,8 @@ export default function AdminDashboard() {
 
       // Set stats
       setStats({
-        totalVoters: votersData,
-        totalCandidates: candidatesData.length,
+        totalVoters: votersCount,
+        totalCandidates: candidateCount,
         totalVotes: candidatesData.reduce((acc, curr) => acc + curr.voteCount, 0),
       });
     } catch (error) {

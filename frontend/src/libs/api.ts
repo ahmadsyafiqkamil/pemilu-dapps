@@ -19,7 +19,49 @@ if (!PINATA_JWT) {
 }
 
 export const api = {
-  // Admin related functions
+  // =============================================
+  // IPFS Utility Functions
+  // =============================================
+  
+  uploadImageToIPFS: async (file: File): Promise<string> => {
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      const metadata = JSON.stringify({
+        name: file.name
+      })
+      formData.append('pinataMetadata', metadata)
+
+      const pinataOptions = JSON.stringify({
+        cidVersion: 1
+      })
+      formData.append('pinataOptions', pinataOptions)
+
+      const response = await fetch(PINATA_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${PINATA_JWT}`
+        },
+        body: formData
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || `Failed to upload to Pinata: ${response.statusText}`)
+      }
+
+      const result: PinataResponse = await response.json()
+      return result.IpfsHash
+    } catch (error) {
+      throw new Error(`Error uploading to IPFS: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  },
+
+  // =============================================
+  // Admin Functions
+  // =============================================
+
   checkAdminStatus: async (walletAddress: string): Promise<boolean> => {
     try {
       const response = await fetch(`${API_URL}/admins/check/${walletAddress}`)
@@ -62,7 +104,10 @@ export const api = {
     }
   },
 
-  // Candidate related functions
+  // =============================================
+  // Candidate Functions
+  // =============================================
+
   getAllCandidates: async (): Promise<Candidate[]> => {
     try {
       const response = await fetch(`${API_URL}/candidates`)
@@ -89,41 +134,6 @@ export const api = {
       throw error instanceof Error ? error : new Error('Failed to fetch candidate details')
     }
   },
-  // Upload image to IPFS
-  uploadImageToIPFS: async (file: File): Promise<string> => {
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      
-      const metadata = JSON.stringify({
-        name: file.name
-      })
-      formData.append('pinataMetadata', metadata)
-
-      const pinataOptions = JSON.stringify({
-        cidVersion: 1
-      })
-      formData.append('pinataOptions', pinataOptions)
-
-      const response = await fetch(PINATA_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${PINATA_JWT}`
-        },
-        body: formData
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || `Failed to upload to Pinata: ${response.statusText}`)
-      }
-
-      const result: PinataResponse = await response.json()
-      return result.IpfsHash
-    } catch (error) {
-      throw new Error(`Error uploading to IPFS: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-  },
 
   addCandidate: async (name: string, imageCID: string, address: string): Promise<AddCandidateResponse> => {
     try {
@@ -148,7 +158,6 @@ export const api = {
     }
   },
 
-  // Remove candidate
   removeCandidate: async (candidateId: number, address: string): Promise<TransactionResponse> => {
     try {
       const response = await fetch(`${API_URL}/candidates/${candidateId}`, {
@@ -174,8 +183,25 @@ export const api = {
       throw error instanceof Error ? error : new Error('Failed to remove candidate')
     }
   },
-  
-  // Voter related functions
+
+  getCandidateCount: async (): Promise<number> => {
+    try {
+      const response = await fetch(`${API_URL}/candidates_count`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch candidate count')
+      }
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error in getCandidateCount:', error)
+      throw error instanceof Error ? error : new Error('Failed to fetch candidate count')
+    }
+  },
+
+  // =============================================
+  // Voter Functions
+  // =============================================
+
   checkVoterStatus: async (walletAddress: string): Promise<boolean> => {
     try {
       const response = await fetch(`${API_URL}/voters/check/${walletAddress}`)
@@ -267,7 +293,8 @@ export const api = {
 
   getVoterCount: async (): Promise<number> => {
     try {
-      const response = await fetch(`${API_URL}/voters/count`)
+      const response = await fetch(`${API_URL}/voters_count`)
+      console.log('Voter count response:', response)
       if (!response.ok) {
         throw new Error('Failed to fetch votes count')
       }
@@ -279,6 +306,10 @@ export const api = {
       throw error instanceof Error ? error : new Error('Failed to fetch voter count')
     }
   },
+
+  // =============================================
+  // Voting Period Functions
+  // =============================================
   
   setVotingPeriod: async (walletAddress: string, startTime: number, endTime: number): Promise<TransactionResponse> => {
     try {
@@ -342,17 +373,4 @@ export const api = {
     }
   },
 
-  // getCandidateCount: async (): Promise<number> => {
-  //   try {
-  //     const response = await fetch(`${API_URL}/candidates/count`)
-  //     if (!response.ok) { 
-  //       throw new Error('Failed to fetch candidate count')
-  //     }
-  //     const data = await response.json()
-  //     return data
-  //   } catch (error) {
-  //     console.error('Error fetching candidate count:', error)
-  //     throw error instanceof Error ? error : new Error('Failed to fetch candidate count')
-  //   }
-  // },
 } 
