@@ -13,9 +13,37 @@ w3 = Web3(Web3.HTTPProvider(os.getenv("RPC_URL_SEPOLIA")))
 if not w3.is_connected():
     raise Exception("Failed to connect to Ethereum node")
 
-
 contract_address = os.getenv("CONTRACT_ADDRESS_SEPOLIA")
 contract = w3.eth.contract(address=contract_address, abi=abi)
+
+# =============================================
+# Utility Functions
+# =============================================
+
+def build_transact(tx_function, user_address):
+    gas_limit, gas_params = utils.get_gas_parameters(tx_function, user_address)
+    nonce = w3.eth.get_transaction_count(user_address)
+
+    tx = tx_function.build_transaction({
+        "from": user_address,
+        "nonce": nonce,
+        "gas": gas_limit,
+        **gas_params
+    })
+
+    # Convert BigNumber/Hex to int before returning as JSON
+    tx["gas"] = int(tx["gas"])
+    tx["nonce"] = int(tx["nonce"])
+    tx["maxFeePerGas"] = int(tx["maxFeePerGas"])
+    tx["maxPriorityFeePerGas"] = int(tx["maxPriorityFeePerGas"])
+    tx["chainId"] = int(tx["chainId"])
+    tx["value"] = int(tx.get("value", 0))
+
+    return tx
+
+# =============================================
+# Role Check Functions
+# =============================================
 
 def is_contract_owner(address: str) -> bool:
     """Check if the given address is the contract owner"""
@@ -26,48 +54,26 @@ def is_admin(address: str) -> bool:
     """Check if the given address is an admin"""
     return contract.functions.isAdmin(Web3.to_checksum_address(address)).call()
 
-# def add_admin(owner_address: str, new_admin_address: str):
-#     """Add a new admin to the contract"""
-#     if not is_contract_owner(owner_address):
-#         raise Exception("Only contract owner can add new admins")
-    
-#     tx_function = contract.functions.addAdmin(Web3.to_checksum_address(new_admin_address))
-#     return build_transact(tx_function, owner_address)
+def is_voter(address: str) -> bool:
+    """Check if the given address is registered as a voter"""
+    try:
+        voter_data = contract.functions.voters(Web3.to_checksum_address(address)).call()
+        return voter_data[0]  # isRegistered is the first field in Voter struct
+    except Exception as e:
+        print(f"Error checking voter status for {address}: {str(e)}")
+        return False
+
+# =============================================
+# Admin Functions
+# =============================================
 
 def add_admin(owner_address: str, new_admin_address: str):
     """Add a new admin to the contract"""
     if not is_contract_owner(owner_address):
         raise Exception("Only contract owner can add new admins")
     
-    # Get the owner's private key from environment variable
-    owner_private_key = os.getenv("PRIVATE_KEY_METAMASK")
-    if not owner_private_key:
-        raise Exception("OWNER_PRIVATE_KEY not found in environment variables")
-    
-    # Build the transaction
     tx_function = contract.functions.addAdmin(Web3.to_checksum_address(new_admin_address))
-    gas_limit, gas_params = utils.get_gas_parameters(tx_function, owner_address)
-    nonce = w3.eth.get_transaction_count(owner_address)
-    
-    # Build the transaction
-    tx = tx_function.build_transaction({
-        "from": owner_address,
-        "nonce": nonce,
-        "gas": gas_limit,
-        **gas_params
-    })
-    
-    # Sign the transaction
-    signed_tx = w3.eth.account.sign_transaction(tx, owner_private_key)
-    
-    # Send the transaction
-    tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
-    
-    # Wait for transaction receipt
-    receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-    
-    return receipt
-    
+    return build_transact(tx_function, owner_address)
 
 def remove_admin(owner_address: str, admin_address: str):
     """Remove an admin from the contract"""
@@ -76,6 +82,53 @@ def remove_admin(owner_address: str, admin_address: str):
     
     tx_function = contract.functions.removeAdmin(Web3.to_checksum_address(admin_address))
     return build_transact(tx_function, owner_address)
+
+def add_candidate(user_address: str, name: str, imageCID: str):
+    """Add a new candidate"""
+    if not is_admin(user_address):
+        raise Exception("Only admins can add candidates")
+        
+    tx_function = contract.functions.addCandidate(name, imageCID)
+    return build_transact(tx_function, user_address)
+
+def remove_candidate(user_address: str, candidate_id: int):
+    """Remove a candidate from the contract"""
+    if not is_admin(user_address):
+        raise Exception("Only admins can remove candidates")
+    
+    tx_function = contract.functions.removeCandidate(candidate_id)
+    return build_transact(tx_function, user_address)
+
+def remove_voter(user_address: str, voter_address: str):
+    """Remove a voter from the contract"""
+    if not is_admin(user_address):
+        raise Exception("Only admins can remove voters")
+    
+    tx_function = contract.functions.removeVoter(voter_address)
+    return build_transact(tx_function, user_address)
+
+def set_voting_period(user_address: str, start_time: int, end_time: int):
+    """Set the voting period"""
+    tx_function = contract.functions.setVotingPeriod(start_time, end_time)
+    return build_transact(tx_function, user_address)
+
+# =============================================
+# Voter Functions
+# =============================================
+
+def register_voter(user_address: str):
+    """Register a new voter"""
+    tx_function = contract.functions.registerAsVoter()
+    return build_transact(tx_function, user_address)
+
+def vote(user_address: str, candidate_id: int):
+    """Vote for a candidate"""
+    tx_function = contract.functions.vote(candidate_id)
+    return build_transact(tx_function, user_address)
+
+# =============================================
+# Query Functions
+# =============================================
 
 def get_all_candidates():
     """Get all candidates from the contract"""
@@ -106,13 +159,13 @@ def get_all_candidates():
     removed_candidates = set()
     for log in remove_logs:
         decoded_log = contract.events.CandidateRemoved().process_log(log)
-        removed_candidates.add(decoded_log['args']['id'])
+        removed_candidates.add(decoded_log.args.id)
     
     # Process each add log
     for log in add_logs:
         # Decode the log
         decoded_log = contract.events.CandidateAdded().process_log(log)
-        candidate_id = decoded_log['args']['id']
+        candidate_id = decoded_log.args.id
         
         # Skip if this candidate was removed
         if candidate_id in removed_candidates:
@@ -147,65 +200,28 @@ def get_candidate_details(candidate_id: int):
     except Exception as e:
         print(f"Error getting candidate details for {candidate_id}: {str(e)}")
         return None
-    
-def remove_candidate(user_address: str, candidate_id: int):
-    """Remove a candidate from the contract"""
-    if not is_admin(user_address):
-        raise Exception("Only admins can remove candidates")
-    
-    tx_function = contract.functions.removeCandidate(candidate_id)
-    return build_transact(tx_function, user_address)    
 
-def add_candidate(user_address: str, name: str, imageCID: str):
-    if not is_admin(user_address):
-        raise Exception("Only admins can add candidates")
-        
-    tx_function = contract.functions.addCandidate(name, imageCID)
-    return build_transact(tx_function, user_address)
-
-
-def is_voter(address: str) -> bool:
-    """Check if the given address is registered as a voter"""
+def get_voter_details(voter_address: str):
+    """Get details of a specific voter"""
     try:
-        voter_data = contract.functions.voters(Web3.to_checksum_address(address)).call()
-        return voter_data[0]  # isRegistered is the first field in Voter struct
+        voter_details = contract.functions.getVoterDetails(Web3.to_checksum_address(voter_address)).call()
+        return voter_details
     except Exception as e:
-        print(f"Error checking voter status for {address}: {str(e)}")
-        return False
-    
-def register_voter(user_address: str):
-    """Register a new voter"""
-    tx_function = contract.functions.registerAsVoter()
-    return build_transact(tx_function, user_address)   
-
-def remove_voter(user_address: str, voter_address: str):
-    """Remove a voter from the contract"""
-    if not is_admin(user_address):
-        raise Exception("Only admins can remove voters")
-    
-    tx_function = contract.functions.removeVoter(voter_address)
-    return build_transact(tx_function, user_address)
-
-def get_voter_count():
-    """Get the number of registered voters"""
-    return contract.functions.getTotalRegisteredVoters().call()
-
+        print(f"Error getting voter details for {voter_address}: {str(e)}")
+        raise e
 
 def get_all_voters():
     """Get all voters from the contract"""
     voters = contract.functions.getAllVoters().call()
     return voters
 
+def get_voter_count():
+    """Get the number of registered voters"""
+    return contract.functions.getTotalRegisteredVoters().call()
 
-def vote(user_address: str, candidate_id: int):
-    """Vote for a candidate"""
-    tx_function = contract.functions.vote(candidate_id)
-    return build_transact(tx_function, user_address)
-
-def set_voting_period(user_address: str, start_time: int, end_time: int):
-    """Set the voting period"""
-    tx_function = contract.functions.setVotingPeriod(start_time, end_time)
-    return build_transact(tx_function, user_address)
+def get_candidate_count():
+    """Get the number of candidates"""
+    return contract.functions.getCandidateCount().call()
 
 def get_voting_period():
     """Get the current voting period status"""
@@ -225,26 +241,5 @@ def get_voting_period():
     except Exception as e:
         print(f"Error getting voting period: {str(e)}")
         return None
-
-def build_transact(tx_function, user_address):
-    gas_limit, gas_params = utils.get_gas_parameters(tx_function, user_address)
-    nonce = w3.eth.get_transaction_count(user_address)
-
-    tx = tx_function.build_transaction({
-    "from": user_address,
-    "nonce": nonce,
-    "gas": gas_limit,
-    **gas_params
-})
-
-    # 💡 Convert BigNumber/Hex to int before returning as JSON
-    tx["gas"] = int(tx["gas"])
-    tx["nonce"] = int(tx["nonce"])
-    tx["maxFeePerGas"] = int(tx["maxFeePerGas"])
-    tx["maxPriorityFeePerGas"] = int(tx["maxPriorityFeePerGas"])
-    tx["chainId"] = int(tx["chainId"])
-    tx["value"] = int(tx.get("value", 0))  # just in case
-
-    return tx
 
 

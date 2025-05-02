@@ -2,11 +2,59 @@ from fastapi import APIRouter, HTTPException, Query
 from app.contracts import pemilu_services
 from app.models import models
 from web3 import Web3
+
 router = APIRouter()
+
+# =============================================
+# Utility Routes
+# =============================================
 
 @router.get("/")
 def home():
     return {"message": "Hello World"}
+
+# =============================================
+# Admin Routes
+# =============================================
+
+@router.post("/admins")
+def add_admin(owner_address: str = Query(..., description="Contract owner address"), 
+              new_admin_address: str = Query(..., description="New admin address")):
+    if not Web3.is_address(owner_address) or not Web3.is_address(new_admin_address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        tx = pemilu_services.add_admin(owner_address=owner_address, new_admin_address=new_admin_address)
+        return {"message": "Admin added successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/admins/{admin_address}")
+def remove_admin(admin_address: str, 
+                owner_address: str = Query(..., description="Contract owner address")):
+    if not Web3.is_address(owner_address) or not Web3.is_address(admin_address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        tx = pemilu_services.remove_admin(owner_address=owner_address, admin_address=admin_address)
+        return {"message": "Admin removed successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/admins/check/{address}")
+def check_admin(address: str):
+    if not Web3.is_address(address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        is_admin = pemilu_services.is_admin(address)
+        return {"is_admin": is_admin}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# =============================================
+# Candidate Routes
+# =============================================
 
 @router.get("/candidates")
 def get_candidates():
@@ -45,42 +93,14 @@ def remove_candidate(data: models.RemoveCandidate):
         return {"message": "Candidate removed successfully", "tx_hash": tx}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
 
-@router.post("/admins")
-def add_admin(owner_address: str = Query(..., description="Contract owner address"), 
-              new_admin_address: str = Query(..., description="New admin address")):
-    if not Web3.is_address(owner_address) or not Web3.is_address(new_admin_address):
-        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
-    
-    try:
-        tx = pemilu_services.add_admin(owner_address=owner_address, new_admin_address=new_admin_address)
-        return {"message": "Admin added successfully", "tx_hash": tx}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@router.get("/candidates/count")
+def get_candidate_count():
+    return pemilu_services.get_candidate_count()
 
-@router.delete("/admins/{admin_address}")
-def remove_admin(admin_address: str, 
-                owner_address: str = Query(..., description="Contract owner address")):
-    if not Web3.is_address(owner_address) or not Web3.is_address(admin_address):
-        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
-    
-    try:
-        tx = pemilu_services.remove_admin(owner_address=owner_address, admin_address=admin_address)
-        return {"message": "Admin removed successfully", "tx_hash": tx}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/admins/check/{address}")
-def check_admin(address: str):
-    if not Web3.is_address(address):
-        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
-    
-    try:
-        is_admin = pemilu_services.is_admin(address)
-        return {"is_admin": is_admin}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# =============================================
+# Voter Routes
+# =============================================
 
 @router.get("/voters/check/{address}")
 def check_voter(address: str):
@@ -92,7 +112,7 @@ def check_voter(address: str):
         return {"is_registered": is_registered}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 @router.post("/voters/register")
 def register_voter(address: str = Query(..., description="Voter address")):
     if not Web3.is_address(address):
@@ -103,7 +123,7 @@ def register_voter(address: str = Query(..., description="Voter address")):
         return {"message": "Voter registered successfully", "tx_hash": tx}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 @router.delete("/voters/{voter_address}")
 def remove_voter(data: models.RemoveVoter):
     if not Web3.is_address(data.address) or not Web3.is_address(data.voterAddress):
@@ -114,11 +134,25 @@ def remove_voter(data: models.RemoveVoter):
         return {"message": "Voter removed successfully", "tx_hash": tx}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
 
 @router.get("/voters")
 def get_all_voters():
     return pemilu_services.get_all_voters()
+
+@router.get("/voters/{voter_address}")
+def get_voter_details(voter_address: str):
+    if not Web3.is_address(voter_address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        voter_details = pemilu_services.get_voter_details(voter_address)
+        return {
+            "isRegistered": voter_details[0],
+            "hasVoted": voter_details[1],
+            "voteCandidateId": voter_details[2]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/voters/vote")
 def vote(data: models.Vote):
@@ -134,6 +168,10 @@ def vote(data: models.Vote):
 @router.get("/voters/count")
 def get_voter_count():
     return pemilu_services.get_voter_count()
+
+# =============================================
+# Voting Period Routes
+# =============================================
 
 @router.post("/voters/set-voting-period")
 def set_voting_period(data: models.SetVotingPeriod):

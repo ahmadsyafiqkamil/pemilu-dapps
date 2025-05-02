@@ -217,7 +217,7 @@ export const api = {
         throw new Error('Failed to fetch voters')
       }
       const voterAddresses: string[] = await response.json()
-      
+      console.log('Voter addresses:', voterAddresses)
       // Get details for each voter
       const voters: Voter[] = []
       for (const address of voterAddresses) {
@@ -341,5 +341,18 @@ export const api = {
       throw error instanceof Error ? error : new Error('Failed to fetch voting period')
     }
   },
-  
+
+  // getCandidateCount: async (): Promise<number> => {
+  //   try {
+  //     const response = await fetch(`${API_URL}/candidates/count`)
+  //     if (!response.ok) { 
+  //       throw new Error('Failed to fetch candidate count')
+  //     }
+  //     const data = await response.json()
+  //     return data
+  //   } catch (error) {
+  //     console.error('Error fetching candidate count:', error)
+  //     throw error instanceof Error ? error : new Error('Failed to fetch candidate count')
+  //   }
+  // },
 } 
