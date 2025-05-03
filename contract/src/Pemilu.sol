@@ -10,7 +10,8 @@ contract Pemilu is Ownable {
     uint public candidateCount;
     
     // Mappings
-    mapping(uint => bool) private idExists;
+    mapping(uint => bool) private idExistsCandidate;
+    mapping(uint => bool) private idExistsVoter;
     mapping(uint => Candidate) public candidates;
     mapping(address => Voter) public voters;
     mapping(address => bool) public admins;
@@ -27,6 +28,7 @@ contract Pemilu is Ownable {
     }
     
     struct Voter {
+        uint id;
         bool isRegistered;
         bool hasVoted;
         uint voteCandidateId;
@@ -90,12 +92,12 @@ contract Pemilu is Ownable {
 
     function addCandidate(string memory _name, string memory _imageCID) public onlyAdmin {
         uint id = generateId();
-        while (idExists[id]) {
+        while (idExistsCandidate[id]) {
             id = uint(keccak256(abi.encodePacked(id, block.prevrandao))) % 10**10;
         }
 
         candidateCount++;
-        idExists[id] = true;
+        idExistsCandidate[id] = true;
         candidates[id] = Candidate(id, _name, 0, _imageCID);
         emit CandidateAdded(id, _name, _imageCID);
     }
@@ -106,7 +108,7 @@ contract Pemilu is Ownable {
         
         string memory candidateName = candidates[_candidateId].name;
         delete candidates[_candidateId];
-        idExists[_candidateId] = false;
+        idExistsCandidate[_candidateId] = false;
         candidateCount--;
         
         emit CandidateRemoved(_candidateId, candidateName);

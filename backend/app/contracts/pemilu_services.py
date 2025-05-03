@@ -212,8 +212,8 @@ def get_voter_details(voter_address: str):
 
 def get_all_voters():
     """Get all voters from the contract"""
-    voters = contract.functions.getAllVoters().call()
-    return voters
+    addresses, is_registered, has_voted, vote_candidate_ids = contract.functions.getAllVotersDetails().call()
+    return [{"address": addresses[i], "isRegistered": is_registered[i], "hasVoted": has_voted[i], "voteCandidateId": vote_candidate_ids[i]} for i in range(len(addresses))]
 
 def get_voter_count():
     """Get the number of registered voters"""

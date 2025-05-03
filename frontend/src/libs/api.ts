@@ -238,28 +238,18 @@ export const api = {
 
   getAllVoters: async (): Promise<Voter[]> => {
     try {
-      const response = await fetch(`${API_URL}/voters`)
+      const response = await fetch(`${API_URL}/all_voters`)
       if (!response.ok) {
         throw new Error('Failed to fetch voters')
       }
-      const voterAddresses: string[] = await response.json()
-      console.log('Voter addresses:', voterAddresses)
-      // Get details for each voter
-      const voters: Voter[] = []
-      for (const address of voterAddresses) {
-        const voterResponse = await fetch(`${API_URL}/voters/${address}`)
-        if (voterResponse.ok) {
-          const voterData = await voterResponse.json()
-          voters.push({
-            id: voters.length + 1,
-            address: address,
-            isRegistered: voterData.isRegistered,
-            hasVoted: voterData.hasVoted
-          })
-        }
-      }
-      
-      return voters
+      const data = await response.json()
+      return data.map((voter: any, index: number) => ({
+        id: index + 1,
+        address: voter.address,
+        isRegistered: voter.isRegistered,
+        hasVoted: voter.hasVoted,
+        voteCandidateId: voter.voteCandidateId
+      }))
     } catch (error) {
       console.error('Error fetching voters:', error)
       throw error instanceof Error ? error : new Error('Failed to fetch voters')

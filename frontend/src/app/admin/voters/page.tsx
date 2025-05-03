@@ -52,6 +52,7 @@ export default function VotersPage() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voting Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voted For</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -74,6 +75,9 @@ export default function VotersPage() {
                   }`}>
                     {voter.hasVoted ? 'Voted' : 'Not Voted'}
                   </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {voter.hasVoted ? `Candidate #${voter.voteCandidateId}` : '-'}
                 </td>
               </tr>
             ))}

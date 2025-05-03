@@ -47,6 +47,7 @@ export interface Voter {
   address: string;
   isRegistered: boolean;
   hasVoted: boolean;
+  voteCandidateId?: number;
 }
 
 export interface VotingPeriodResponse {
