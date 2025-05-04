@@ -363,4 +363,55 @@ export const api = {
     }
   },
 
+  stopVotingPeriod: async (walletAddress: string): Promise<TransactionResponse> => {
+    try {
+      const response = await fetch(`${API_URL}/admins/stop-voting-period`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address: walletAddress
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to stop voting period')
+      }
+      
+      const data = await response.json()
+      return {
+        message: data.message,
+        tx_hash: data.tx_hash
+      }
+    } catch (error) {
+      console.error('Error stopping voting period:', error)
+      throw error instanceof Error ? error : new Error('Error stopping voting period')
+    }
+  },
+
+  getWinner: async (walletAddress: string): Promise<TransactionResponse> => {
+    try {
+      const response = await fetch(`${API_URL}/admins/winner`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address: walletAddress
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to get winner')
+      }
+      
+      return response.json()
+    } catch (error) {
+      console.error('Error getting winner:', error)
+      throw error instanceof Error ? error : new Error('Error getting winner')
+    }
+  }
 } 

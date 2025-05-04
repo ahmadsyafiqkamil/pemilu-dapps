@@ -52,6 +52,29 @@ def check_admin(address: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/admins/stop-voting-period")
+def stop_voting_period(data: models.StopVotingPeriod):
+    if not Web3.is_address(data.address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        tx = pemilu_services.stop_voting_period(user_address=data.address)
+        return {"message": "Voting period stopped successfully", "tx_hash": tx}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/admins/winner")
+def get_winner(data: models.GetWinner):
+    if not Web3.is_address(data.address):
+        raise HTTPException(status_code=400, detail="Invalid Ethereum address")
+    
+    try:
+        winner = pemilu_services.get_winner(user_address=data.address)
+        return {"winner": winner}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # =============================================
 # Candidate Routes
 # =============================================

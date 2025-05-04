@@ -27,3 +27,9 @@ class SetVotingPeriod(BaseModel):
     address: str
     startTime: int
     endTime: int
+
+class GetWinner(BaseModel):
+    address: str
+
+class StopVotingPeriod(BaseModel):
+    address: str

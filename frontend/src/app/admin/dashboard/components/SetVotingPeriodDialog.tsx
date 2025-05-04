@@ -153,6 +153,63 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
     }
   }
 
+  const handleStopVotingPeriod = async () => {
+    if (!address || !walletClient || !publicClient) {
+      toast.error('Please connect your wallet first')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await api.stopVotingPeriod(walletAddress)
+      const { tx_hash: tx } = response
+
+      toast.loading('Waiting for signature...')
+
+      const hash = await walletClient.sendTransaction({
+        to: tx.to as `0x${string}`,
+        data: tx.data as `0x${string}`,
+        value: BigInt(tx.value),
+        type: (tx.type as unknown) as 'eip1559',
+        maxFeePerGas: BigInt(tx.maxFeePerGas),
+        maxPriorityFeePerGas: BigInt(tx.maxPriorityFeePerGas),
+        gas: BigInt(tx.gas),
+        chainId: tx.chainId,
+      })
+
+      toast.dismiss()
+
+      await toast.promise(
+        (async () => {
+          try {
+            const receipt = await publicClient.waitForTransactionReceipt({ hash })
+            if (receipt.status === 'success') {
+              const updatedStatus = await api.getVotingPeriod()
+              setVotingPeriodStatus(updatedStatus)
+              onSuccess?.()
+              return receipt
+            } else {
+              throw new Error('Transaction failed')
+            }
+          } catch (error) {
+            console.error('Transaction error:', error)
+            throw error
+          }
+        })(),
+        {
+          loading: 'Processing transaction...',
+          success: (receipt) => `Voting period has been stopped successfully! Block: ${receipt.blockNumber}`,
+          error: (err) => `Failed to stop voting period: ${err instanceof Error ? err.message : 'Unknown error'}`
+        }
+      )
+    } catch (error) {
+      console.error('Error details:', error)
+      toast.error(error instanceof Error ? error.message : "Failed to stop voting period")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleString()
   }
@@ -160,17 +217,17 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
   if (votingPeriodStatus.isSet) {
     return (
       <div className="space-y-2">
-        <Button variant="outline" disabled>
-          {votingPeriodStatus.isActive 
-            ? "Voting Period Active" 
-            : votingPeriodStatus.hasEnded 
-              ? "Voting Period Ended" 
-              : "Voting Period Set"}
-        </Button>
-        {/* <div className="text-sm text-gray-500">
-          <p>Start: {formatDate(votingPeriodStatus.startTime)}</p>
-          <p>End: {formatDate(votingPeriodStatus.endTime)}</p>
-        </div> */}
+        <div className="flex gap-2">
+          {votingPeriodStatus.isActive && (
+            <Button 
+              variant="destructive" 
+              onClick={handleStopVotingPeriod}
+              disabled={loading}
+            >
+              {loading ? "Stopping..." : "Stop Voting Period"}
+            </Button>
+          )}
+        </div>
       </div>
     )
   }

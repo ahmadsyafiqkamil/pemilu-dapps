@@ -243,6 +243,12 @@ contract Pemilu is Ownable {
         return (startTime, endTime);
     }
 
+    function stopVotingPeriod() public onlyAdmin {
+        require(block.timestamp >= startTime, "Pemilihan belum dimulai");
+        require(block.timestamp <= endTime, "Pemilihan sudah berakhir");
+        endTime = block.timestamp;
+    }
+
     function getWinner() public onlyAfterVoting returns (uint id, string memory name, uint voteCount) {
         uint maxVotes = 0;
         uint winnerId = 0;

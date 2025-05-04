@@ -112,6 +112,16 @@ def set_voting_period(user_address: str, start_time: int, end_time: int):
     tx_function = contract.functions.setVotingPeriod(start_time, end_time)
     return build_transact(tx_function, user_address)
 
+def stop_voting_period(user_address: str):
+    """Stop the voting period"""
+    tx_function = contract.functions.stopVotingPeriod()
+    return build_transact(tx_function, user_address)
+
+def get_winner(user_address: str):
+    """Get the winner of the election"""
+    tx_function = contract.functions.getWinner()
+    return build_transact(tx_function, user_address)
+
 # =============================================
 # Voter Functions
 # =============================================
