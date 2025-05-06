@@ -131,8 +131,13 @@ def check_voter(address: str):
         raise HTTPException(status_code=400, detail="Invalid Ethereum address")
     
     try:
-        is_registered = pemilu_services.is_voter(address)
-        return {"is_registered": is_registered}
+        # Get full voter details instead of just is_registered status
+        voter_details = pemilu_services.get_voter_details(address)
+        return {
+            "is_registered": voter_details[0],
+            "has_voted": voter_details[1],
+            "vote_candidate_id": voter_details[2]
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

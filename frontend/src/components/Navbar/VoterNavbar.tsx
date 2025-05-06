@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ConnectButton } from '@/components/ui/connectButton';
 
 export const VoterNavbar = () => {
-  const { user, isVoter } = useAuth();
+  const { user, isVoter, hasVoted } = useAuth();
 
   return (
     <nav className="bg-white shadow-lg">
@@ -19,12 +19,14 @@ export const VoterNavbar = () => {
             </div>
             {isVoter && (
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                <Link
-                  href="/voter/vote"
-                  className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-indigo-500"
-                >
-                  Vote
-                </Link>
+                {!hasVoted && (
+                  <Link
+                    href="/voter/vote"
+                    className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-indigo-500"
+                  >
+                    Vote
+                  </Link>
+                )}
                 <Link
                   href="/voter/results"
                   className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-indigo-500"
@@ -39,10 +41,16 @@ export const VoterNavbar = () => {
               <div className="flex items-center space-x-2">
                 <span className={`px-2 py-1 rounded-full text-sm font-medium ${
                   isVoter 
-                    ? 'bg-green-100 text-green-800'
+                    ? hasVoted
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-green-100 text-green-800'
                     : 'bg-yellow-100 text-yellow-800'
                 }`}>
-                  {isVoter ? 'Voter' : 'Unregistered'}
+                  {isVoter 
+                    ? hasVoted 
+                      ? 'Voted'
+                      : 'Voter'
+                    : 'Unregistered'}
                 </span>
               </div>
             )}

@@ -9,11 +9,11 @@ ABI_PATH = os.path.join(BASE_DIR, 'abis', 'Pemilu.json')
 with open(ABI_PATH, 'r') as f:
     abi = json.load(f)
 
-w3 = Web3(Web3.HTTPProvider(os.getenv("RPC_URL_SEPOLIA")))
+w3 = Web3(Web3.HTTPProvider(os.getenv("RPC_URL")))
 if not w3.is_connected():
     raise Exception("Failed to connect to Ethereum node")
 
-contract_address = os.getenv("CONTRACT_ADDRESS_SEPOLIA")
+contract_address = os.getenv("CONTRACT_ADDRESS")
 contract = w3.eth.contract(address=contract_address, abi=abi)
 
 # =============================================
@@ -57,8 +57,9 @@ def is_admin(address: str) -> bool:
 def is_voter(address: str) -> bool:
     """Check if the given address is registered as a voter"""
     try:
-        voter_data = contract.functions.voters(Web3.to_checksum_address(address)).call()
-        return voter_data[0]  # isRegistered is the first field in Voter struct
+        # Get voter details using getVoterDetails instead of direct mapping access
+        voter_details = contract.functions.getVoterDetails(Web3.to_checksum_address(address)).call()
+        return voter_details[0]  # isRegistered is the first field in the tuple
     except Exception as e:
         print(f"Error checking voter status for {address}: {str(e)}")
         return False

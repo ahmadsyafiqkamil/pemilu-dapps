@@ -7,6 +7,8 @@ import { api } from '@/libs/api';
 interface User {
   address: string;
   role: 'admin' | 'voter' | 'unregistered';
+  hasVoted?: boolean;
+  voteCandidateId?: number;
 }
 
 export const useAuth = () => {
@@ -26,11 +28,13 @@ export const useAuth = () => {
             role: 'admin',
           });
         } else {
-          // Jika bukan admin, cek apakah terdaftar sebagai voter
-          const isRegistered = await api.checkVoterStatus(address);
+          // Jika bukan admin, cek status voter
+          const voterStatus = await api.checkVoterStatus(address);
           setUser({
             address,
-            role: isRegistered ? 'voter' : 'unregistered',
+            role: voterStatus.is_registered ? 'voter' : 'unregistered',
+            hasVoted: voterStatus.has_voted,
+            voteCandidateId: voterStatus.vote_candidate_id
           });
         }
       } catch (error) {
@@ -56,6 +60,8 @@ export const useAuth = () => {
     isAdmin: user?.role === 'admin',
     isVoter: user?.role === 'voter',
     isUnregistered: user?.role === 'unregistered',
+    hasVoted: user?.hasVoted,
+    voteCandidateId: user?.voteCandidateId,
     isAuthenticated: isConnected && user !== null,
     refreshAuth: checkAuth, // Expose the refresh function
   };

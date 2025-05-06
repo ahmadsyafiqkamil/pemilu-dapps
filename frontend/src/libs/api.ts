@@ -202,7 +202,7 @@ export const api = {
   // Voter Functions
   // =============================================
 
-  checkVoterStatus: async (walletAddress: string): Promise<boolean> => {
+  checkVoterStatus: async (walletAddress: string): Promise<VoterResponse> => {
     try {
       const response = await fetch(`${API_URL}/voters/check/${walletAddress}`)
       if (!response.ok) {
@@ -211,10 +211,14 @@ export const api = {
       }
       const data: VoterResponse = await response.json()
       console.log('Voter status response:', data)
-      return data.is_registered
+      return data
     } catch (error) {
       console.error('Error checking voter status:', error)
-      return false
+      return {
+        is_registered: false,
+        has_voted: false,
+        vote_candidate_id: 0
+      }
     }
   },
   

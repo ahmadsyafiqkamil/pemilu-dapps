@@ -40,6 +40,8 @@ export interface AddCandidateResponse {
 
 export interface VoterResponse {
   is_registered: boolean;
+  has_voted: boolean;
+  vote_candidate_id: number;
 }
 
 export interface Voter {

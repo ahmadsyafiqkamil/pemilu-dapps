@@ -28,6 +28,14 @@ export default function RegisterVoter() {
     setIsLoading(true)
 
     try {
+      // Check current voter status first
+      const currentStatus = await api.checkVoterStatus(address)
+      if (currentStatus.is_registered) {
+        toast.error('You are already registered as a voter')
+        setIsLoading(false)
+        return
+      }
+
       // Show loading toast while waiting for registration
       toast.loading('Preparing registration...')
 
@@ -63,21 +71,21 @@ export default function RegisterVoter() {
             if (receipt.status === 'success') {
               console.log('Transaction confirmed:', receipt)
               
-              // Wait for a few blocks to ensure transaction is processed
-              await new Promise(resolve => setTimeout(resolve, 5000))
+              // Wait for blockchain to process the transaction
+              await new Promise(resolve => setTimeout(resolve, 15000))
               
-              // Refresh auth status after successful registration
+              // Refresh auth status
               await refreshAuth()
               
               // Check if user is now registered as voter
-              const isVoter = await api.checkVoterStatus(address)
-              console.log('Voter status after registration:', isVoter)
+              const newStatus = await api.checkVoterStatus(address)
+              console.log('Voter status after registration:', newStatus)
               
-              if (isVoter) {
+              if (newStatus.is_registered) {
                 // Only redirect if confirmed as voter
                 setTimeout(() => {
                   router.push('/voter/vote')
-                }, 1500) // Wait 1.5 seconds before redirecting to show the success message
+                }, 1500)
                 return receipt
               } else {
                 console.error('Voter registration failed - status check returned false')
