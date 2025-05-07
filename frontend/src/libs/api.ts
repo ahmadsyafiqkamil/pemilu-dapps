@@ -307,6 +307,26 @@ export const api = {
   
   setVotingPeriod: async (walletAddress: string, startTime: number, endTime: number): Promise<TransactionResponse> => {
     try {
+      const currentTime = Math.floor(Date.now() / 1000);
+      
+      // Validate times
+      if (startTime < currentTime) {
+        throw new Error('Start time must be in the future');
+      }
+      if (endTime <= startTime) {
+        throw new Error('End time must be after start time');
+      }
+
+      console.log('Setting voting period with:', {
+        walletAddress,
+        startTime,
+        endTime,
+        startTimeDate: new Date(startTime * 1000).toLocaleString(),
+        endTimeDate: new Date(endTime * 1000).toLocaleString(),
+        currentTime,
+        currentTimeDate: new Date().toLocaleString()
+      });
+
       const response = await fetch(`${API_URL}/voters/set-voting-period`, {
         method: 'POST',
         headers: {
@@ -326,28 +346,7 @@ export const api = {
 
       const data = await response.json()
       console.log('Set voting period response:', data)
-      console.log('Response type:', typeof data)
-      console.log('Response keys:', Object.keys(data))
-      
-      // Check if the response has the expected format
-      if (!data || typeof data !== 'object') {
-        throw new Error('Invalid response format from backend')
-      }
-
-      // If the response is already in the correct format, return it
-      if (data.tx_hash) {
-        return data
-      }
-
-      // If the response is in a different format, try to transform it
-      if (data.tx) {
-        return {
-          message: data.message || 'Voting period set successfully',
-          tx_hash: data.tx
-        }
-      }
-
-      throw new Error('Invalid response format from backend')
+      return data
     } catch (error) {
       console.error('Error setting voting period:', error)
       throw error instanceof Error ? error : new Error('Error setting voting period')

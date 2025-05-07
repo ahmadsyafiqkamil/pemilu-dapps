@@ -2,6 +2,7 @@ import os
 import json
 from web3 import Web3
 from app.utils import utils
+from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ABI_PATH = os.path.join(BASE_DIR, 'abis', 'Pemilu.json')
@@ -110,6 +111,11 @@ def remove_voter(user_address: str, voter_address: str):
 
 def set_voting_period(user_address: str, start_time: int, end_time: int):
     """Set the voting period"""
+    print(f"Setting voting period with:")
+    print(f"Start time: {start_time} ({datetime.fromtimestamp(start_time)})")
+    print(f"End time: {end_time} ({datetime.fromtimestamp(end_time)})")
+    print(f"Current time: {w3.eth.get_block('latest').timestamp} ({datetime.fromtimestamp(w3.eth.get_block('latest').timestamp)})")
+    
     tx_function = contract.functions.setVotingPeriod(start_time, end_time)
     return build_transact(tx_function, user_address)
 
@@ -239,8 +245,9 @@ def get_voting_period():
     try:
         start_time = contract.functions.startTime().call()
         end_time = contract.functions.endTime().call()
-        current_time = w3.eth.get_block('latest').timestamp
-        
+        # Use server time instead of blockchain time
+        current_time = int(datetime.now().timestamp())
+        print(f"Current time: {current_time} ({datetime.fromtimestamp(current_time)})")
         return {
             "startTime": start_time,
             "endTime": end_time,
