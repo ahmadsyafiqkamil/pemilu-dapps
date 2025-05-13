@@ -8,6 +8,7 @@ import type { Candidate } from '@/libs/api'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ImageIcon } from "@/components/ui/icons"
+import { VotingCountdown } from '@/components/voting-countdown'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -45,6 +46,8 @@ export default function VotePage() {
                     Select a candidate to view their details and cast your vote. You can only vote once.
                 </p>
             </div>
+
+            <VotingCountdown />
 
             {loading && (
                 <div className="flex justify-center items-center min-h-[400px]">

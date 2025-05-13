@@ -10,6 +10,8 @@ import {
   VotingPeriodResponse
 } from '@/types/api';
 
+export type { Candidate };
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 const PINATA_API_URL = 'https://api.pinata.cloud/pinning/pinFileToIPFS'
 const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT
