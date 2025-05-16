@@ -188,9 +188,31 @@ def vote(data: models.Vote):
         raise HTTPException(status_code=400, detail="Invalid Ethereum address")
     
     try:
+        # Get voting period status first
+        voting_period = pemilu_services.get_voting_period()
+        if not voting_period:
+            raise HTTPException(status_code=500, detail="Failed to get voting period status")
+            
+        if not voting_period["isActive"]:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": "Voting period is not active",
+                    "details": {
+                        "currentTime": voting_period["currentTime"],
+                        "startTime": voting_period["startTime"],
+                        "endTime": voting_period["endTime"]
+                    }
+                }
+            )
+            
+        # Proceed with voting
         tx = pemilu_services.vote(user_address=data.address, candidate_id=data.candidateId)
         return {"message": "Vote cast successfully", "tx_hash": tx}
+    except HTTPException as he:
+        raise he
     except Exception as e:
+        print(f"Error voting: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/voters_count")

@@ -22,10 +22,18 @@ export default function CandidateDetailPage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [isVoting, setIsVoting] = useState(false)
+    const [voterStatus, setVoterStatus] = useState<{
+        isRegistered: boolean;
+        hasVoted: boolean;
+        voteCandidateId: number;
+    } | null>(null)
 
     useEffect(() => {
         loadCandidate()
-    }, [params.id])
+        if (address) {
+            checkVoterStatus()
+        }
+    }, [params.id, address])
 
     const loadCandidate = async () => {
         try {
@@ -39,9 +47,29 @@ export default function CandidateDetailPage() {
         }
     }
 
+    const checkVoterStatus = async () => {
+        if (!address) return
+        
+        try {
+            const status = await api.checkVoterStatus(address)
+            setVoterStatus({
+                isRegistered: status.is_registered,
+                hasVoted: status.has_voted,
+                voteCandidateId: status.vote_candidate_id
+            })
+        } catch (err) {
+            console.error('Error checking voter status:', err)
+        }
+    }
+
     const handleVote = async () => {
         if (!address || !walletClient || !publicClient || !candidate) {
             toast.error('Please connect your wallet first')
+            return
+        }
+
+        if (voterStatus?.hasVoted) {
+            toast.error('You have already voted')
             return
         }
 
@@ -71,6 +99,8 @@ export default function CandidateDetailPage() {
                     const receipt = await publicClient.waitForTransactionReceipt({ hash })
                     if (receipt.status === 'success') {
                         toast.success('Vote recorded successfully!')
+                        // Update voter status after successful vote
+                        await checkVoterStatus()
                         router.push('/voter/vote')
                     } else {
                         throw new Error('Transaction failed')
@@ -166,16 +196,40 @@ export default function CandidateDetailPage() {
                                     Click the Vote button to cast your vote for this candidate.
                                 </p>
                             </div>
+
+                            {voterStatus && (
+                                <div className="mt-4 p-4 bg-muted rounded-lg">
+                                    <h3 className="text-sm font-medium mb-2">Your Voting Status</h3>
+                                    <div className="space-y-2">
+                                        <p className="text-sm">
+                                            Registered: {voterStatus.isRegistered ? 'Yes' : 'No'}
+                                        </p>
+                                        <p className="text-sm">
+                                            Has Voted: {voterStatus.hasVoted ? 'Yes' : 'No'}
+                                        </p>
+                                        {voterStatus.hasVoted && (
+                                            <p className="text-sm">
+                                                Voted for Candidate ID: {voterStatus.voteCandidateId}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="mt-6">
                             <Button
                                 onClick={handleVote}
-                                disabled={isVoting}
+                                disabled={isVoting || (voterStatus?.hasVoted ?? false)}
                                 className="w-full"
                             >
-                                {isVoting ? 'Voting...' : 'Vote for this Candidate'}
+                                {isVoting ? 'Voting...' : voterStatus?.hasVoted ? 'Already Voted' : 'Vote for this Candidate'}
                             </Button>
+                            {voterStatus?.hasVoted && (
+                                <p className="mt-2 text-sm text-center text-muted-foreground">
+                                    You have already cast your vote. Thank you for participating!
+                                </p>
+                            )}
                         </div>
                     </div>
                 </Card>

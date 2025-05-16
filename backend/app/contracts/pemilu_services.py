@@ -140,8 +140,31 @@ def register_voter(user_address: str):
 
 def vote(user_address: str, candidate_id: int):
     """Vote for a candidate"""
-    tx_function = contract.functions.vote(candidate_id)
-    return build_transact(tx_function, user_address)
+    try:
+        # Check voting period first
+        voting_period = get_voting_period()
+        if not voting_period["isActive"]:
+            raise Exception(f"Voting period is not active. Current time: {voting_period['currentTime']}, Start: {voting_period['startTime']}, End: {voting_period['endTime']}")
+        
+        # Check if voter is registered
+        voter_details = contract.functions.getVoterDetails(Web3.to_checksum_address(user_address)).call()
+        if not voter_details[0]:  # isRegistered
+            raise Exception("Voter is not registered")
+        if voter_details[1]:  # hasVoted
+            raise Exception("Voter has already voted")
+            
+        # Check if candidate exists
+        candidate_details = contract.functions.getCandidateDetails(candidate_id).call()
+        if candidate_details[0] == 0:  # id
+            raise Exception("Invalid candidate ID")
+            
+        # If all checks pass, proceed with voting
+        tx_function = contract.functions.vote(candidate_id)
+        print(f"Voting for candidate {candidate_id} from {user_address}")
+        return build_transact(tx_function, user_address)
+    except Exception as e:
+        print(f"Error in vote function: {str(e)}")
+        raise e
 
 # =============================================
 # Query Functions
@@ -243,18 +266,65 @@ def get_candidate_count():
 def get_voting_period():
     """Get the current voting period status"""
     try:
+        # Get times from blockchain
         start_time = contract.functions.startTime().call()
         end_time = contract.functions.endTime().call()
-        # Use server time instead of blockchain time
-        current_time = int(datetime.now().timestamp())
-        print(f"Current time: {current_time} ({datetime.fromtimestamp(current_time)})")
+        blockchain_time = w3.eth.get_block('latest').timestamp
+        server_time = int(datetime.now().timestamp())
+        
+        # Convert to datetime for better logging
+        start_datetime = datetime.fromtimestamp(start_time)
+        end_datetime = datetime.fromtimestamp(end_time)
+        blockchain_datetime = datetime.fromtimestamp(blockchain_time)
+        server_datetime = datetime.fromtimestamp(server_time)
+        
+        print(f"\nVoting Period Status:")
+        print(f"Server Time: {server_time} ({server_datetime})")
+        print(f"Blockchain Time: {blockchain_time} ({blockchain_datetime})")
+        print(f"Time Difference: {server_time - blockchain_time} seconds")
+        print(f"Start Time: {start_time} ({start_datetime})")
+        print(f"End Time: {end_time} ({end_datetime})")
+        
+        # Check if voting period is set
+        is_set = start_time != 0 and end_time != 0
+        print(f"Voting Period Set: {is_set}")
+        
+        # Check if voting period is active using server time
+        is_active = is_set and server_time >= start_time and server_time <= end_time
+        print(f"Voting Period Active (Server Time): {is_active}")
+        
+        # Check if voting period is active using blockchain time
+        is_active_blockchain = is_set and blockchain_time >= start_time and blockchain_time <= end_time
+        print(f"Voting Period Active (Blockchain Time): {is_active_blockchain}")
+        
+        # Check if voting period has ended
+        has_ended = is_set and server_time > end_time
+        print(f"Voting Period Ended: {has_ended}")
+        
+        # Determine status message
+        if not is_set:
+            status_message = "Voting period has not been set"
+        elif has_ended:
+            status_message = "Voting period has ended"
+        elif not is_active and server_time < start_time:
+            time_to_start = start_time - server_time
+            status_message = f"Voting period has not started yet. Starts in {time_to_start} seconds"
+        elif not is_active and server_time > end_time:
+            status_message = "Voting period has ended"
+        else:
+            status_message = "Voting period is active"
+            
+        print(f"Status: {status_message}\n")
+        
         return {
             "startTime": start_time,
             "endTime": end_time,
-            "currentTime": current_time,
-            "isSet": start_time != 0 and end_time != 0,
-            "isActive": start_time != 0 and end_time != 0 and current_time >= start_time and current_time <= end_time,
-            "hasEnded": start_time != 0 and end_time != 0 and current_time > end_time
+            "currentTime": server_time,
+            "blockchainTime": blockchain_time,
+            "isSet": is_set,
+            "isActive": is_active,
+            "hasEnded": has_ended,
+            "statusMessage": status_message
         }
     except Exception as e:
         print(f"Error getting voting period: {str(e)}")

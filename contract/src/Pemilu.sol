@@ -59,7 +59,8 @@ contract Pemilu is Ownable {
 
     modifier onlyDuringVoting() {
         require(startTime != 0 && endTime != 0, "Waktu pemilihan belum diatur");
-        require(block.timestamp >= startTime && block.timestamp <= endTime, "Pemilihan tidak aktif");
+        // Allow a small buffer time (5 minutes) before start time
+        require(block.timestamp >= (startTime - 300) && block.timestamp <= endTime, "Pemilihan tidak aktif");
         _;
     }
     
