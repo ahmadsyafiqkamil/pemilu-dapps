@@ -12,66 +12,79 @@ A modern, secure, and transparent decentralized voting system built with Web3 te
 
 ## 📸 Application Screenshots
 
-### Landing Page
-![Landing Page](./images/Screenshot%202025-05-28%20at%2019.08.19.png)
-The landing page provides an overview of the voting system with clear navigation options and information about the election process.
+### Homepage
+![Homepage](./images/homepage.png)
+The main landing page of the application featuring:
+- Clean and modern UI design
+- Quick access to voting features
+- System overview and instructions
+- Navigation menu for different sections
 
-### Wallet Connection
-![Wallet Connection](./images/Screenshot%202025-05-28%20at%2019.09.22.png)
-Users can connect their Web3 wallet (MetaMask) to interact with the voting system securely.
+### Voter Dashboard
+![Voter Dashboard](./images/voter-dashboard.png)
+The voter's main interface showing:
+- Current voting period status
+- Available candidates
+- Voting instructions
+- Real-time vote count
+- User's voting status
 
-### Voting Interface
-![Voting Interface](./images/Screenshot%202025-05-28%20at%2019.10.40.png)
-The main voting interface where users can:
-- View candidate information
-- Cast their vote
-- See real-time voting status
+### Voting Process
+![Vote Candidate](./images/vote-candidate.png)
+The voting interface where users can:
+- Select their preferred candidate
+- Review candidate information
+- Confirm their vote through MetaMask
+- View transaction status
 
-### Transaction Confirmation
-![Transaction Confirmation](./images/Screenshot%202025-05-28%20at%2019.10.49.png)
-Secure transaction confirmation process through MetaMask to ensure vote integrity.
+### Candidate Management
+![Add Candidate](./images/add-candidate.png)
+Administrative interface for managing candidates:
+- Add new candidates
+- Upload candidate information
+- Set candidate details
+- Manage candidate profiles
 
-### Results Dashboard
-![Results Dashboard](./images/Screenshot%202025-05-28%20at%2019.11.32.png)
-Real-time results dashboard showing:
+### Candidate Confirmation
+![Candidate Added](./images/candidate-added.png)
+Confirmation screen showing:
+- Success message for added candidates
+- Candidate details
+- Next steps for administrators
+- System status updates
+
+### Admin Dashboard
+![Admin Dashboard](./images/dashboard-admin.png)
+Main administrative control panel featuring:
+- Overall system statistics
+- Active voting period status
+- Candidate management
+- Vote monitoring
+- System controls
+
+### Voting Period Management
+![Voting Period Active](./images/voting-period-active.png)
+Interface for managing voting periods:
+- Start/stop voting periods
+- Set time limits
+- Monitor active period
+- View participation statistics
+
+### Vote Results
+![Candidate Voted](./images/candidate-voted.png)
+Real-time voting results display:
 - Vote distribution
-- Candidate statistics
+- Candidate performance
 - Total votes cast
+- Percentage calculations
 
-### Admin Panel
-![Admin Panel](./images/Screenshot%202025-05-28%20at%2019.13.00.png)
-Administrative interface for:
-- Managing candidates
-- Monitoring votes
-- System configuration
-
-### Vote Verification
-![Vote Verification](./images/Screenshot%202025-05-28%20at%2019.13.43.png)
-Vote verification process ensuring:
-- Vote authenticity
-- Transaction confirmation
-- Result accuracy
-
-### Detailed Statistics
-![Detailed Statistics](./images/Screenshot%202025-05-28%20at%2019.13.51.png)
-Comprehensive statistics view showing:
-- Vote distribution
-- Time-based analysis
-- Regional breakdown
-
-### Transaction History
-![Transaction History](./images/Screenshot%202025-05-28%20at%2019.14.06.png)
-Complete transaction history for:
-- Vote tracking
-- Audit purposes
-- Transparency
-
-### System Status
-![System Status](./images/Screenshot%202025-05-28%20at%2019.14.30.png)
-Real-time system status monitoring:
-- Network health
-- Transaction status
-- System performance
+### Admin Controls
+![Admin Stop Period](./images/dashboard-admin-stop-period.png)
+Advanced administrative controls:
+- End voting period
+- Emergency stop functionality
+- System status monitoring
+- Security controls
 
 ## 🏗️ Project Structure
 
