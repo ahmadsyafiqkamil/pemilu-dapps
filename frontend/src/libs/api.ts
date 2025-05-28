@@ -7,7 +7,8 @@ import {
   AddCandidateResponse,
   VoterResponse,
   Voter,
-  VotingPeriodResponse
+  VotingPeriodResponse,
+  WinnerResponse
 } from '@/types/api';
 
 export type { Candidate };
@@ -385,21 +386,32 @@ export const api = {
         throw new Error(errorData.detail || 'Failed to stop voting period')
       }
       
-      const data = await response.json()
-      return {
-        message: data.message,
-        tx_hash: data.tx_hash
-      }
+      return response.json()
     } catch (error) {
       console.error('Error stopping voting period:', error)
       throw error instanceof Error ? error : new Error('Error stopping voting period')
     }
   },
 
-  getWinner: async (walletAddress: string): Promise<TransactionResponse> => {
+  getWinner: async (walletAddress: string): Promise<WinnerResponse> => {
     try {
+      // First check voting period status
+      const votingPeriod = await api.getVotingPeriod();
+      
+      // If voting period hasn't ended on blockchain, try to stop it first
+      if (votingPeriod.blockchainTime <= votingPeriod.endTime) {
+        try {
+          await api.stopVotingPeriod(walletAddress);
+          // Wait a bit for the transaction to be mined
+          await new Promise(resolve => setTimeout(resolve, 5000));
+        } catch (error) {
+          console.error('Error stopping voting period:', error);
+          throw new Error('Failed to stop voting period. Please try again in a few minutes.');
+        }
+      }
+
       const response = await fetch(`${API_URL}/admins/winner`, {
-        method: 'GET',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },

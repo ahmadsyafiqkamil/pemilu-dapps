@@ -11,7 +11,7 @@ export default function ConnectWalletNotice() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <h1 className="text-2xl font-semibold mb-6 text-center">
-        Please connect your wallet to continue
+        Silakan hubungkan dompet Anda untuk melanjutkan
       </h1>
       <ConnectButton />
     </div>

@@ -62,7 +62,7 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
     setLoading(true)
 
     if (!address || !walletClient || !publicClient) {
-      toast.error('Please connect your wallet first')
+      toast.error('Silakan hubungkan dompet Anda terlebih dahulu')
       setLoading(false)
       return
     }
@@ -74,20 +74,20 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
 
       // Validate timestamps
       if (startTimestamp >= endTimestamp) {
-        toast.error("Start time must be before end time")
+        toast.error("Waktu mulai harus sebelum waktu selesai")
         setLoading(false)
         return
       }
 
       if (startTimestamp < Math.floor(Date.now() / 1000)) {
-        toast.error("Start time must be in the future")
+        toast.error("Waktu mulai harus di masa depan")
         setLoading(false)
         return
       }
 
       // Validate wallet address
       if (!walletAddress || !walletAddress.startsWith('0x')) {
-        toast.error("Invalid wallet address")
+        toast.error("Alamat dompet tidak valid")
         setLoading(false)
         return
       }
@@ -101,7 +101,7 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
       console.log('Transaction data:', tx)
       
       // Show loading toast while waiting for signature
-      toast.loading('Waiting for signature...')
+      toast.loading('Menunggu tanda tangan...')
       
       const hash = await walletClient.sendTransaction({
         to: tx.to as `0x${string}`,
@@ -139,15 +139,15 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
           }
         })(),
         {
-          loading: 'Processing transaction...',
-          success: (receipt) => `Voting period has been set successfully! Block: ${receipt.blockNumber}`,
-          error: (err) => `Failed to set voting period: ${err instanceof Error ? err.message : 'Unknown error'}`
+          loading: 'Memproses transaksi...',
+          success: (receipt) => `Periode pemilihan telah berhasil ditentukan! Blok: ${receipt.blockNumber}`,
+          error: (err) => `Gagal menentukan periode pemilihan: ${err instanceof Error ? err.message : 'Kesalahan tidak diketahui'}`
         }
       )
 
     } catch (error) {
       console.error('Error details:', error)
-      toast.error(error instanceof Error ? error.message : "Failed to set voting period")
+      toast.error(error instanceof Error ? error.message : "Gagal menentukan periode pemilihan")
     } finally {
       setLoading(false)
     }
@@ -160,7 +160,7 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-600">Voting Period</span>
+        <span className="text-sm text-gray-600">Periode Pemilihan</span>
         <span className={`px-2 py-1 rounded-full text-sm ${
           !votingPeriodStatus.isSet 
             ? 'bg-yellow-100 text-yellow-800'
@@ -171,25 +171,25 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
                 : 'bg-gray-100 text-gray-800'
         }`}>
           {!votingPeriodStatus.isSet 
-            ? 'Not Set'
+            ? 'Belum Ditentukan'
             : votingPeriodStatus.isActive 
-              ? 'Active'
+              ? 'Aktif'
               : votingPeriodStatus.hasEnded 
-                ? 'Ended'
-                : 'Pending'}
+                ? 'Berakhir'
+                : 'Menunggu'}
         </span>
       </div>
       
       {votingPeriodStatus.isSet && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Start Time</span>
+            <span className="text-sm text-gray-600">Waktu Mulai</span>
             <span className="text-sm text-gray-900">
               {formatDate(votingPeriodStatus.startTime)}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">End Time</span>
+            <span className="text-sm text-gray-600">Waktu Selesai</span>
             <span className="text-sm text-gray-900">
               {formatDate(votingPeriodStatus.endTime)}
             </span>
@@ -200,14 +200,14 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" disabled={votingPeriodStatus.isActive}>
-            {votingPeriodStatus.isSet ? "Change Voting Period" : "Set Voting Period"}
+            {votingPeriodStatus.isSet ? "Ubah Periode Pemilihan" : "Tentukan Periode Pemilihan"}
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Set Voting Period</DialogTitle>
+            <DialogTitle>Tentukan Periode Pemilihan</DialogTitle>
             <DialogDescription>
-              Set the start and end time for the voting period. Make sure to set times in the future.
+              Tentukan waktu mulai dan selesai untuk periode pemilihan. Pastikan untuk menentukan waktu di masa depan.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
@@ -241,7 +241,7 @@ export function SetVotingPeriodDialog({ walletAddress, onSuccess }: SetVotingPer
             </div>
             <DialogFooter>
               <Button type="submit" disabled={loading}>
-                {loading ? "Setting..." : "Set Period"}
+                {loading ? "Menentukan..." : "Tentukan Periode"}
               </Button>
             </DialogFooter>
           </form>

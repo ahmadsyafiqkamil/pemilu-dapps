@@ -41,7 +41,7 @@ export const ConnectButton = () => {
         }}
         disabled={isConnecting}
       >
-        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+        {isConnecting ? 'Menghubungkan...' : 'Hubungkan Dompet'}
       </button>
     )
   }

@@ -31,7 +31,7 @@ export default function VotePage() {
             setCandidates(data || [])
         } catch (err) {
             console.error('Error loading candidates:', err)
-            setError(err instanceof Error ? err.message : 'Failed to load candidates')
+            setError(err instanceof Error ? err.message : 'Gagal memuat kandidat')
             setCandidates([])
         } finally {
             setLoading(false)
@@ -41,9 +41,9 @@ export default function VotePage() {
     return (
         <div className="container mx-auto p-6">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold">Cast Your Vote</h1>
+                <h1 className="text-3xl font-bold">Berikan Suara Anda</h1>
                 <p className="text-muted-foreground mt-2">
-                    Select a candidate to view their details and cast your vote. You can only vote once.
+                    Pilih kandidat untuk melihat detail dan memberikan suara Anda. Anda hanya dapat memilih sekali.
                 </p>
             </div>
 
@@ -67,9 +67,9 @@ export default function VotePage() {
                         <div className="bg-background rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                             <ImageIcon className="w-8 h-8 text-muted-foreground" />
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">No Candidates Available</h3>
+                        <h3 className="text-xl font-semibold mb-2">Tidak Ada Kandidat Tersedia</h3>
                         <p className="text-muted-foreground">
-                            There are no candidates available for voting at the moment.
+                            Saat ini tidak ada kandidat yang tersedia untuk dipilih.
                         </p>
                     </div>
                 </div>
@@ -98,7 +98,7 @@ export default function VotePage() {
                                             <div className="flex items-center justify-center h-full">
                                                 <div className="text-center">
                                                     <ImageIcon className="w-12 h-12 mx-auto text-muted-foreground" />
-                                                    <p className="mt-2 text-sm text-muted-foreground">No image available</p>
+                                                    <p className="mt-2 text-sm text-muted-foreground">Tidak ada gambar tersedia</p>
                                                 </div>
                                             </div>
                                         )}
@@ -106,7 +106,7 @@ export default function VotePage() {
                                 </Card.Content>
                                 <Card.Footer className="flex justify-end">
                                     <Button variant="outline">
-                                        View Details
+                                        Lihat Detail
                                     </Button>
                                 </Card.Footer>
                             </Card>

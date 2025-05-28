@@ -56,7 +56,17 @@ export interface VotingPeriodResponse {
   startTime: number;
   endTime: number;
   currentTime: number;
+  blockchainTime: number;
   isSet: boolean;
   isActive: boolean;
   hasEnded: boolean;
+  statusMessage: string;
+}
+
+export interface WinnerResponse {
+  winner: {
+    id: number;
+    name: string;
+    voteCount: number;
+  };
 } 

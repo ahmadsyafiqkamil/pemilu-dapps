@@ -17,11 +17,11 @@ export default function RegisterVoter() {
 
   const handleRegister = async () => {
     // Show confirmation dialog
-    const confirmed = window.confirm('Are you sure you want to register as a voter?')
+    const confirmed = window.confirm('Apakah Anda yakin ingin mendaftar sebagai pemilih?')
     if (!confirmed) return
 
     if (!address || !walletClient || !publicClient) {
-      toast.error('Please connect your wallet first')
+      toast.error('Silakan hubungkan dompet Anda terlebih dahulu')
       return
     }
 
@@ -31,13 +31,13 @@ export default function RegisterVoter() {
       // Check current voter status first
       const currentStatus = await api.checkVoterStatus(address)
       if (currentStatus.is_registered) {
-        toast.error('You are already registered as a voter')
+        toast.error('Anda sudah terdaftar sebagai pemilih')
         setIsLoading(false)
         return
       }
 
       // Show loading toast while waiting for registration
-      toast.loading('Preparing registration...')
+      toast.loading('Mempersiapkan pendaftaran...')
 
       const response = await api.registerVoter(address)
       console.log('Backend response:', response)
@@ -46,7 +46,7 @@ export default function RegisterVoter() {
       toast.dismiss()
 
       // Show loading toast while waiting for signature
-      toast.loading('Waiting for signature...')
+      toast.loading('Menunggu tanda tangan...')
 
       const { tx_hash: tx } = response
       const hash = await walletClient.sendTransaction({
@@ -101,15 +101,15 @@ export default function RegisterVoter() {
           }
         })(),
         {
-          loading: 'Processing transaction...',
-          success: 'Successfully registered as voter! Redirecting to dashboard...',
-          error: 'Registration failed'
+          loading: 'Memproses transaksi...',
+          success: 'Berhasil mendaftar sebagai pemilih! Mengalihkan ke dashboard...',
+          error: 'Pendaftaran gagal'
         }
       )
 
     } catch (error) {
       console.error('Error in registration:', error)
-      toast.error(error instanceof Error ? error.message : 'An error occurred during registration')
+      toast.error(error instanceof Error ? error.message : 'Terjadi kesalahan saat pendaftaran')
     } finally {
       setIsLoading(false)
     }
@@ -118,7 +118,7 @@ export default function RegisterVoter() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg shadow-md">
-        <h1 className="text-3xl font-bold text-center text-gray-900">Register as Voter</h1>
+        <h1 className="text-3xl font-bold text-center text-gray-900">Daftar sebagai Pemilih</h1>
         
         <div className="space-y-4">
           <button
@@ -126,7 +126,7 @@ export default function RegisterVoter() {
             disabled={isLoading}
             className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {isLoading ? 'Registering...' : 'Register as Voter'}
+            {isLoading ? 'Mendaftar...' : 'Daftar sebagai Pemilih'}
           </button>
         </div>
       </div>

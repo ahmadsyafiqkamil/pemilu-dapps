@@ -63,7 +63,7 @@ def stop_voting_period(data: models.StopVotingPeriod):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/admins/winner")
+@router.post("/admins/winner")
 def get_winner(data: models.GetWinner):
     if not Web3.is_address(data.address):
         raise HTTPException(status_code=400, detail="Invalid Ethereum address")
